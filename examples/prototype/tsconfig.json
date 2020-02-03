@@ -1,8 +1,0 @@
-{
-  // pick up the configuraton from the adl.types package. 
-  "extends": "./node_modules/@azure-tools/adl.types/config.json",
-  // all *.adl.ts files
-  "include": [
-    "**/*.adl.ts"
-  ],
-}

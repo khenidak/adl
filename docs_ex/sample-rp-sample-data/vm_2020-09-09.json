@@ -1,0 +1,19 @@
+{
+    "dataDisks": [
+        {
+            "diskId": "diskid-here"
+        }
+    ],
+    "hardwareProfile": {
+        "vmSize": "StandardDS_v3"
+    },
+    "storageProfile": {
+        "offer": "offer-here",
+        "publisher": "publisher-here",
+        "sku": "sku-here",
+        "version": "version-here"
+    },
+    "v1Prop": 9,
+    "coreCount": 100,
+    "vmId": "string-here"
+}

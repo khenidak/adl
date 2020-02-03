@@ -339,22 +339,35 @@
     //   "reviewCategory": "tools"
     // }
     {
-      "packageName": "@azure-tools/adl",
-      "projectFolder": "adl",
-      "reviewCategory": "production",
-      "shouldPublish": true
-    },
-    {
       "packageName": "@azure-tools/adl.types",
       "projectFolder": "adl.types",
       "reviewCategory": "production",
       "shouldPublish": true
     },
     {
-      "packageName": "prototype",
-      "projectFolder": "examples/prototype",
+      "packageName": "@azure-tools/adl.runtime",
+      "projectFolder": "adl.runtime",
       "reviewCategory": "production",
-      "shouldPublish": false
+      "shouldPublish": true
+    },
+    {
+      "packageName": "@azure-tools/arm.adl",
+      "projectFolder": "arm.adl",
+      "reviewCategory": "production",
+      "shouldPublish": true
+    },
+    {
+      "packageName": "cli",
+      "projectFolder": "cli",
+      "reviewCategory": "production",
+      "shouldPublish": true
+    },
+    {
+      "packageName": "sample_rp",
+      "projectFolder": "sample_rp",
+      "reviewCategory": "production",
+      "shouldPublish": true
     }
+
   ]
 }

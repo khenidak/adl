@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "outDir": "./dist/",
+    "rootDir": "./src",
+    "target": "es2020",
+    "module": "commonjs",
+    "experimentalDecorators": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "resources",
+    "node_modules"
+  ]
+}

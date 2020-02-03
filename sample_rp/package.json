@@ -1,0 +1,26 @@
+{
+  "name": "sample_rp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "rp.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p .",
+    "run" : "nodejs index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@azure-tools/adl.types": "~1.0.0",
+    "@azure-tools/adl.runtime": "~1.0.0",
+    "@azure-tools/arm.adl": "~1.0.0",
+    "@microsoft/ts-command-line": "4.3.10"
+  },
+  "dependencies": {
+    "@azure-tools/adl.types": "~1.0.0",
+    "@azure-tools/adl.runtime": "~1.0.0",
+    "@azure-tools/arm.adl": "~1.0.0",
+    "@microsoft/ts-command-line": "4.3.10"
+  }
+
+}

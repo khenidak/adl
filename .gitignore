@@ -170,3 +170,8 @@ temp
 # Rush files
 common/temp/**
 package-deps.json
+
+# vim files
+*~
+*.swp
+*.swo

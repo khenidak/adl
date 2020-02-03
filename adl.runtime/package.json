@@ -1,8 +1,7 @@
 {
-  "name": "@azure-tools/adl.types",
+  "name": "@azure-tools/adl.runtime",
   "version": "1.0.0",
-  "description": "ADL Type Definitions for rpc APIs",
-  "types": "index",
+  "description": "ADL Parsing Tools",
   "main" : "./dist/index.js",
   "directories": {
     "doc": "docs"
@@ -14,7 +13,7 @@
     "eslint-fix": "eslint  . --fix --ext .ts",
     "eslint": "eslint  . --ext .ts",
     "build": "tsc -p .",
-    "watch": "echo none thanks.",
+    "watch": "tsc -p . --watch",
     "prepare": "npm run build",
     "test": "npm run build && mocha dist/test"
   },
@@ -34,9 +33,23 @@
   "readme": "https://github.com/Azure/adl/blob/master/readme.md",
   "devDependencies": {
     "@types/node": "12.7.2",
-    "typescript": "~3.7.4",
-    "@typescript-eslint/eslint-plugin": "~2.16.0",
-    "@typescript-eslint/parser": "~2.16.0",
-    "eslint": "~6.8.0"
+    "@types/js-yaml": "3.12.1",
+    "@azure-tools/linq": "~3.1.0",
+    "@azure-tools/codegen": "~2.1.0",
+    "@azure-tools/async-io": "~3.0.0",
+    "source-map-support": "0.5.13",
+    "@azure-tools/adl.types": "~1.0.0",
+    "ts-morph": "6.0.2"
+  },
+  "dependencies": {
+    "@types/node": "12.7.2",
+    "@types/js-yaml": "3.12.1",
+    "@azure-tools/linq": "~3.1.0",
+    "@azure-tools/codegen": "~2.1.0",
+    "@azure-tools/async-io": "~3.0.0",
+    "source-map-support": "0.5.13",
+    "@azure-tools/adl.types": "~1.0.0",
+    "ts-morph": "6.0.2"
   }
+
 }

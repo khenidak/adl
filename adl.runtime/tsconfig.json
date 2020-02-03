@@ -1,0 +1,25 @@
+{
+  "extends": "../shared/tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "strictNullChecks": true,
+    "target": "es2020",
+    "outDir": "dist",
+    "rootDir": ".",
+    "types" : ["node"]
+   },
+  "include": [
+    "./index.ts",
+    "./model/**/*",
+    "./serialization/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "test/scenarios/**",
+    "resources",
+    "node_modules",
+    "**/*.d.ts",
+    "**/*.adl.ts"
+  ]
+}
