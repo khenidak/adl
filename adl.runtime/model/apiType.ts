@@ -1,4 +1,4 @@
-import { TypeAliasDeclaration, ClassDeclaration, InterfaceDeclaration, TypeReferenceNode, TypeGuards, Node, Type } from 'ts-morph';
+import { TypeAliasDeclaration, ClassDeclaration, InterfaceDeclaration, TypeReferenceNode, TypeGuards, Node, Type,TypeNode } from 'ts-morph';
 
 
 import * as adltypes from '@azure-tools/adl.types';
@@ -12,10 +12,28 @@ function createApiTypeModel(t: Type): modeltypes.ApiTypeModel{
 	return new api_type(t);
 }
 
+// represents a constraint
+export class apitype_constraint implements modeltypes.ConstraintModel{
+	get Name(): string{
+		return this.name;
+	}
 
+	get Arguments(): Array<any>{
+		return this.args;
+	}
+	constructor(private name:string, private args: Array<any>){}
+}
 
+//TODO: loading logic can be improved by moving as much as we can to base class
+//api_type implements the common api type behaviors. And
+// is used in the following ways:
+// 1. super for versioned and normalized type
+// 2. represents nested types. forexample a parent type versioned type
+// might be Person.person may have Address(s). each is represented by
+// ap_type.
 export class api_type implements modeltypes.ApiTypeModel{
 	private _properties = new Map<string, modeltypes.ApiTypePropertyModel>();
+	private _constraints: Array<modeltypes.ConstraintModel> | undefined = undefined;
 	protected _name:string;
 
 	get Name():string{return this._name;}
@@ -27,6 +45,26 @@ export class api_type implements modeltypes.ApiTypeModel{
 			infos.push(v);
 
 		return infos;
+	}
+
+	get Constraints(): Array<modeltypes.ConstraintModel>{
+		if(this._t == undefined) return new Array<modeltypes.ConstraintModel>(); // can not work if this is not loaded
+		if(this._constraints != undefined) return this._constraints;
+
+		const typer = new helpers.typerEx(this._t);
+		this._constraints = new  Array<modeltypes.ConstraintModel>();
+		const constraintsTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_APITYPECONSTRAINT, true);
+		for(let t of constraintsTypes){
+			const name = t.compilerType.symbol.escapedName.toString();
+			const args = new Array<any>();
+			// get args
+			t.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));
+			const c = new apitype_constraint(name, args);
+
+			// add it
+			this._constraints.push(c);
+		}
+		return this._constraints as Array<modeltypes.ConstraintModel>;
 	}
 
 	getProperty(name: string): modeltypes.ApiTypePropertyModel | undefined{
@@ -118,7 +156,8 @@ export class normalized_type extends api_type implements modeltypes.NormalizedAp
 	}
 
 	constructor( private tad:TypeAliasDeclaration, private tp: helpers.typer, private apiModel: modeltypes.ApiModel){
-		super(undefined);
+		super(tad.getType());
+
 	}
 
 	load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
@@ -145,7 +184,6 @@ export class normalized_type extends api_type implements modeltypes.NormalizedAp
 		// add properties
 		return this.addPropertiesFor(options, errors, props);
 	}
-
 }
 
 
@@ -184,7 +222,9 @@ export class versioned_type extends api_type implements modeltypes.VersionedApiT
 	}
 
 	constructor(private tad:TypeAliasDeclaration, private tp: helpers.typer, private apiModel: modeltypes.ApiModel){
-		super(undefined);
+		super((tad.getTypeNode() as TypeNode).getType());
+		//const x = tad.getTypeNode() as TypeNode;
+		//console.log(`${x.getText()} ${x.getType().getText()} ${x.getType().isIntersection()}`)
 	}
 
 	getVersionedTypeName(): string{

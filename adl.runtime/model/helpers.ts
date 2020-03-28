@@ -94,7 +94,7 @@ export class typer{
 			//console.log(`typer  ${t.getText()} is an intersection`)
 			t.getTypeNodes().forEach(
 				c	=>	{
-					//console.log(c.getText())
+				//	console.log(c.getText())
 					this._Ts.push(c);
 				});
 			} else {
@@ -149,8 +149,6 @@ export class typer{
 		const a = new Array<TypeNode>();
 		this._Ts.forEach(
 				t => {
-					//console.log(`*** ${t.getText()}`);
-
 					const notComplex = t.getKindName() == "StringKeyword" ||
 															t.getKindName() == "ArrayType" ||
 															t.getKindName() == "NumberKeyword";
@@ -166,8 +164,6 @@ export class typer{
 
 					const ref = t as TypeReferenceNode;
 					if(ref.getTypeName().getType().isIntersection()){
-						// console.log(ref.getTypeName().getType().getText());
-						// console.log(ref.getTypeName().getType().isIntersection());
 						const innerTyper = new typerEx(ref.getTypeName().getType());
 						const matches = innerTyper.MatchingInherits(s, condition);
 						if(matches.length > 0) a.push(t);// we push the type itself, not the sub type
@@ -250,10 +246,10 @@ export class typerEx{
 
 	private getSubClassOf(s:string, t: Type):Type | undefined{
 		const baseTypes = t.getBaseTypes();
-
 		for(let tt of baseTypes){
-			if(EscapedName(tt) == s || this.getSubClassOf(s, tt) != undefined)
-						return tt as Type;
+			if(EscapedName(tt) == s || this.getSubClassOf(s, tt) != undefined){
+				return tt as Type;
+			}
 		}
 
 		return undefined;
@@ -264,7 +260,6 @@ export class typerEx{
 		this._Ts.forEach(
 				t => {
 					//console.log(`*** ${t.getText()}`);
-
 					const notComplex = t.isString()  ||
 															t.isNumber() ||
 															t.isArray();
@@ -292,5 +287,4 @@ export class typerEx{
 		});
 		return a
 	}
-
 }

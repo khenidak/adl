@@ -30,4 +30,5 @@ export interface PropertyBehaviorConstraint extends PropertyConstraint{}
 
 
 // constraints that apply on types must implement this interface
-export interface TypeConstraint extends ConstraintInterface{}
+export interface ApiTypeConstraint extends ConstraintInterface{}
+

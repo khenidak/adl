@@ -24,14 +24,21 @@ export class showStoreAction extends CommandLineAction {
 		var prefix = "";
 		// normalized types
 		console.log(`${prefix} Normalized Types:`);
-		for(let normalized of normalizedTypes){
-		prefix = "  ";
-		console.log(`${prefix} + Type: ${normalized.Name}`);
-		// properties
-		for(let prop  of normalized.Properties){
-			prefix = "    ";
-			if(!prop.isRemoved)
-				console.log(`${prefix} Property:${prop.Name}`);
+		for(const normalizedType of normalizedTypes){
+			prefix = "  ";
+			let constraintsAsText = ""
+			for(const c of normalizedType.Constraints){
+				constraintsAsText = constraintsAsText + c.Name + "\t"
+			}
+			if(constraintsAsText.length > 0){
+				constraintsAsText = "> " + constraintsAsText;
+			}
+			console.log(`${prefix} + Type: ${normalizedType.Name} ${constraintsAsText}`);
+			// properties
+			for(const prop  of normalizedType.Properties){
+				prefix = "    ";
+				if(!prop.isRemoved)
+					console.log(`${prefix} Property:${prop.Name}`);
 			}
 		}
 	}
@@ -39,10 +46,9 @@ export class showStoreAction extends CommandLineAction {
 	private printApiVersions(scope: string, apiVersions: Iterable<adlruntime.ApiVersionModel>):void{
 		var prefix = "";
 		if(scope != "all" && scope != "api-versions" && scope != "versioned") return;
-
-		// api versions
-		console.log(`${prefix} Versions:`);
-		for(let apiVersion of apiVersions){
+			// api versions
+			console.log(`${prefix} Versions:`);
+			for(let apiVersion of apiVersions){
 			prefix = "  ";
 			console.log(`${prefix} + api-version: ${apiVersion.Name}`);
 			this.printVersionedTypes(scope, apiVersion.VersionedTypes);
@@ -53,11 +59,20 @@ export class showStoreAction extends CommandLineAction {
 		var prefix = "";
 		// types in version
 		if(scope != "all" && scope != "versioned") return;
-		for(let apiResource of versionedTypes){
+		for(const versionedType of versionedTypes){
 			prefix = "    ";
-			console.log(`${prefix} Resource:${apiResource.Name}`)
+			let constraintsAsText = ""
+			for(const c of versionedType.Constraints){
+				constraintsAsText = constraintsAsText + c.Name + "\t"
+			}
+
+			if(constraintsAsText.length > 0){
+				constraintsAsText = "> " + constraintsAsText;
+			}
+
+			console.log(`${prefix} Type:${versionedType.Name} ${constraintsAsText}`)
 			// properties
-			for(let prop  of apiResource.Properties){
+			for(const prop  of versionedType.Properties){
 				prefix = "     ";
 				if(!prop.isRemoved)
 					console.log(`${prefix} Property:${prop.Name}`);

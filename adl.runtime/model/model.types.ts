@@ -48,7 +48,10 @@ export interface ApiVersionModel extends loadableObject{
 export interface ApiTypeModel extends loadableObject{
 	readonly Name: string;
 	readonly Properties: Iterable<ApiTypePropertyModel>;
+	readonly Constraints:Array<ConstraintModel>;
+
 	getProperty(propertyName: string): ApiTypePropertyModel | undefined;
+
 }
 
 
@@ -68,10 +71,10 @@ export interface ConstraintModel{
 	readonly Arguments: Array<any>;
 }
 export enum PropertyDataTypeKind{
-	Complex 					= "Complex",
- ComplexArray = "ComplexArray",
+	Complex 			= "Complex",
+	ComplexArray 	= "ComplexArray",
 	ScalarArray		= "ScalarArray",
-	Scalar							= "Scalar",
+	Scalar				= "Scalar",
 }
 
 
@@ -93,6 +96,7 @@ export interface ApiTypePropertyModel extends loadableObject{
 	getArrayElementValidationConstraints():Array<ConstraintModel>;
 	isArray(): boolean;
 }
+
 
 // type guards
 export type AnyAdlModel = ApiModel |  NormalizedApiTypeModel | ApiVersionModel | VersionedApiTypeModel | ApiTypeModel | ApiTypePropertyModel;
