@@ -13,6 +13,17 @@ export class showStoreAction extends CommandLineAction {
 	private _scope: CommandLineChoiceParameter;
 	private _filter: CommandLineStringParameter;
 
+	private getPropertiesConstraintsAsText(p: adlruntime.ApiTypePropertyModel): string{
+		let constraintsAsText = ""
+		for(const c of p.Constraints){
+			constraintsAsText = `${constraintsAsText} | ${c.Name}`;
+		}
+		if(constraintsAsText.length > 0){
+				constraintsAsText =  constraintsAsText;
+		}
+
+		return constraintsAsText;
+	}
 	private printModel(scope: string, model: adlruntime.ApiModel):void{
 		// Print api model name
 		var prefix = "";
@@ -37,8 +48,9 @@ export class showStoreAction extends CommandLineAction {
 			// properties
 			for(const prop  of normalizedType.Properties){
 				prefix = "    ";
-				if(!prop.isRemoved)
-					console.log(`${prefix} Property:${prop.Name}`);
+				if(!prop.isRemoved){
+					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
+				}
 			}
 		}
 	}
@@ -75,7 +87,7 @@ export class showStoreAction extends CommandLineAction {
 			for(const prop  of versionedType.Properties){
 				prefix = "     ";
 				if(!prop.isRemoved)
-					console.log(`${prefix} Property:${prop.Name}`);
+					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
 			}
 		}
 	}

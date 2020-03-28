@@ -10,7 +10,7 @@ import * as normalized from '../normalized/module'
  */
 
 export class ResourceTwo{
-	prop1: adltypes.int32;
+	prop1: number;
 	prop2: string;
 }
 

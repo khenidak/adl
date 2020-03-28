@@ -55,7 +55,7 @@ export class api_type implements modeltypes.ApiTypeModel{
 		this._constraints = new  Array<modeltypes.ConstraintModel>();
 		const constraintsTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_APITYPECONSTRAINT, true);
 		for(let t of constraintsTypes){
-			const name = t.compilerType.symbol.escapedName.toString();
+			const name = helpers.EscapedName(t);
 			const args = new Array<any>();
 			// get args
 			t.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));

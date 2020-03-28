@@ -33,7 +33,8 @@ export function quotelessString(inString: string): string{
 }
 
 export function EscapedName(tt:Type): string{
-	return tt.compilerType.symbol.escapedName.toString()
+	const s = tt.compilerType.symbol.escapedName.toString();
+	return s;
 }
 
 // unpacks a type until it reaches a type that is:
@@ -70,15 +71,6 @@ export class typer{
 
 		const baseTypes = ref.getTypeName().getType().getBaseTypes();
 
-		//console.log('+')
-
-		//console.log(`${ref.getText()} ${ref.getTypeName().getType().isInterface()}`);
-		//ref.getTypeName().forEachChild(c => console.log(`${c.getType().getText()} ${c.getType().isInterface()}  `));
-		//console.log(`${ref.getText()} ${ref.getTypeName().}`);
-		// console.log('-')
-
-		//console.log(`+++ ${t.getText()}/${t.getType().getText()}/ ${t.getKindName()} base: ${baseTypes.length}`);
-
 		for(let tt of baseTypes){
 			if(EscapedName(tt) == s || this.getSubClassOfType(s, tt) != undefined)
 						return tt as Type;
@@ -88,18 +80,13 @@ export class typer{
 	}
 
 	constructor(private t: TypeNode){
-		//console.log(`typer processing: ${t.getText()}`)
 		if(TypeGuards.isIntersectionTypeNode(t))
 		{
-			//console.log(`typer  ${t.getText()} is an intersection`)
 			t.getTypeNodes().forEach(
 				c	=>	{
-				//	console.log(c.getText())
 					this._Ts.push(c);
 				});
 			} else {
-			//console.log(t.getText())
-			//console.log(`typer  ${t.getText()} is NOT an intersection`)
 			this._Ts.push(t);
 		}
 	}
@@ -198,8 +185,6 @@ export class typer{
 		var a = new Array<TypeNode>();
 		this._Ts.forEach(t =>
 		{
-			//console.log(`++ ${t.getKindName()} ${t.getText()}`)
-				// getsymbol().fullyqualifedName
 			if(t.getText().indexOf(s) > -1)
 					a.push(t);
 		});
@@ -224,28 +209,15 @@ export function createLoadError(message:string): adltypes.error{
 
 	return e;
 }
-
+/////////////////////////////////////////////////
+////////////////////////////////////////////////
 export class typerEx{
 	private _Ts:Array<Type> = Array<Type>();
-	constructor(private t: Type){
-			//console.log(`typer processing: ${t.getText()}`)
-		if(t.isIntersection())
-		{
-			//console.log(`typerEX  ${t.getText()} is an intersection`)
-			t.getIntersectionTypes().forEach(
-				c	=>	{
-					//console.log(c.getText())
-					this._Ts.push(c);
-				});
-			} else {
-			//console.log(t.getText())
-			//console.log(`typerEX  ${t.getText()} is NOT an intersection`)
-			this._Ts.push(t);
-		}
-	}
 
+	// returns the type in an Inheritance tree that matched
+	// the requested s.
 	private getSubClassOf(s:string, t: Type):Type | undefined{
-		const baseTypes = t.getBaseTypes();
+		const baseTypes = t.getSymbolOrThrow().getDeclaredType().getBaseTypes(); //t.getBaseTypes();
 		for(let tt of baseTypes){
 			if(EscapedName(tt) == s || this.getSubClassOf(s, tt) != undefined){
 				return tt as Type;
@@ -254,12 +226,44 @@ export class typerEx{
 
 		return undefined;
 	}
+	private unpackIntersection(t: Type, bag: Array<Type>): void{
+		if(t.isIntersection())
+		{
+			const intresect = t.getIntersectionTypes();
+			for(const  c of intresect){
+				this.unpackIntersection(c, bag);
+			}
+		} else {
+				this._Ts.push(t);
+		}
+	}
+	constructor(private t: Type){
+		this.unpackIntersection(t, this._Ts);
+		/*
+		console.log(`${t.getText()} ** ${t.isIntersection()}`)
+		if(t.isIntersection())
+		{
+			t.getIntersectionTypes().forEach(
+				c	=>	{
+					this._Ts.push(c);
+				});
+			} else {
+			this._Ts.push(t);
+		}
+		*/
+	}
+	MatchIfInherits(s:string): Array<Type>{
+		return this.MatchingInherits(s, true);
+	}
 
-		MatchingInherits(s:string, condition: boolean): Array<Type>{
+	MatchIfNotInherits(s:string): Array<Type>{
+		return this.MatchingInherits(s, false);
+	}
+
+	MatchingInherits(s:string, condition: boolean): Array<Type>{
 		const a = new Array<Type>();
 		this._Ts.forEach(
 				t => {
-					//console.log(`*** ${t.getText()}`);
 					const notComplex = t.isString()  ||
 															t.isNumber() ||
 															t.isArray();
@@ -273,13 +277,14 @@ export class typerEx{
 					if(notComplex) return; // there is no point to check inhiritance tree
 																	// if it is a simple type
 
+/*
 					if(t.isIntersection()){
 						const innerTyperEx = new typerEx(t);
 						const matches = innerTyperEx.MatchingInherits(s, condition);
 						if(matches.length > 0) a.push(t);// we push the type itself, not the sub type
 						return; // no need for more work
 					}
-
+*/
 					// if it is a complex type then look for it is inhiritance tree
 					if( (this.getSubClassOf(s, t) != undefined)  == condition){
 						a.push(t);

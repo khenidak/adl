@@ -16,9 +16,9 @@ import * as adltypes from '@azure-tools/adl.types'
 // this won't break older versions of apis because they expect "string"
 // or possible values or a string.. not traditional enum
 export interface ResourceThreeProps{
-	someProp1: adltypes.int64 &
+	someProp1: number &
 						 adltypes.DefaultValue<15>;
-	someProp2: adltypes.datetime;
+	someProp2: string;
 
 	someProp3: string &
 						 adltypes.OneOf<['v1', 'v2', 'v3']>

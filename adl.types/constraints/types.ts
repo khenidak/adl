@@ -28,7 +28,6 @@ export interface ConversionConstraint extends PropertyConstraint{}
 // behavior constraints
 export interface PropertyBehaviorConstraint extends PropertyConstraint{}
 
-
 // constraints that apply on types must implement this interface
 export interface ApiTypeConstraint extends ConstraintInterface{}
 

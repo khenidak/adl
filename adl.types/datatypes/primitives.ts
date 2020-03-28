@@ -1,16 +1,16 @@
-import * as adltypes from './adl'
+import { AdlDataType } from './types'
 
 /* date types */
 
 
 /** the accuracy in bits with which a number can be represented. */
-export  interface Precision<bits extends number> extends adltypes.AdlDataType {}
+export  interface Precision<bits extends number> extends AdlDataType {}
 
 /** a whole number; a number that is not a fraction. */
-export interface Integer extends adltypes.AdlDataType {}
+export interface Integer extends AdlDataType {}
 
 /** a whole number; a  a fraction. */
-export interface FloatingPoint extends adltypes.AdlDataType {};
+export interface FloatingPoint extends AdlDataType {};
 
 /** an 8 bit integer value */
 export type int8 = number & Integer & Precision<8>;
@@ -46,4 +46,4 @@ export type float64 = number & FloatingPoint & Precision<64>;
 export type double = number & FloatingPoint & Precision<64>;
 
 /** the number of seconds that have passed since 00:00:00 UTC Thursday, 1 January 1970. */
-export type unixtime = number & adltypes.AdlDataType;
+export type unixtime = number & AdlDataType;

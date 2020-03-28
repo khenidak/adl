@@ -8,7 +8,7 @@ import * as adltypes from '@azure-tools/adl.types'
 // notice here we are using classes, in vm we used interfaces
 // both are ok
 export class ResourceTwoProps{
-	prop1: adltypes.int32 &
+	prop1: number &
 				 adltypes.Maximum<200> &
 				 adltypes.Immutable;
 

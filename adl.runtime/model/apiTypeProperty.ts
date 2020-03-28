@@ -23,26 +23,17 @@ class property_constraint implements modeltypes.ConstraintModel{
 }
 
 export class type_property{
-	private _tp: helpers.typer;
-
+	private _tpEx : helpers.typerEx;
 	// cached objects.
 	private _constraints: Array<modeltypes.ConstraintModel> | undefined;
-	private _typeNode: TypeNode | undefined; // cached typeNode of the property data type (i.e the thing that is not a constraint)
 	private _dataType_trueType: Type | undefined; // cached true type of property (after unpacking constraints, type aliases, intersections.)
 	private _complexType: modeltypes.ApiTypeModel // cached complex type if DataTypeKind == Complex || ArrayComplex
 
-	private get PropertyDataType_TypeNode(): TypeNode{
-		if (this._typeNode != undefined) return this._typeNode;
-
-		const nonConstraintsTypeNodes = this._tp.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-		this._typeNode = nonConstraintsTypeNodes[0]; // property load() ensures that we have only one in this list
-		return this._typeNode as TypeNode;
-	}
-
 	private get PropertyDataType_TrueType(): Type{
 		if(this._dataType_trueType != undefined) return this._dataType_trueType;
+		const nonConstraintsTypes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
+		const t = nonConstraintsTypes[0]; // property load() ensures that we have only one in this list
 
- 	const t = this.PropertyDataType_TypeNode.getType();
 		const true_t = helpers.getTrueType(t);
 		this._dataType_trueType = true_t;
 		return this._dataType_trueType as Type;
@@ -71,12 +62,23 @@ export class type_property{
 	}
 
 	get DataTypeName():string{
-		if(!this.isArray()) return  this.PropertyDataType_TrueType.getText();
+		if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar)
+			return this.PropertyDataType_TrueType.getText();
 
+		if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex)
+			return helpers.EscapedName(this.PropertyDataType_TrueType);
+
+		if(this.isArray()){
 			const true_t = this.PropertyDataType_TrueType;
 			const element_t = true_t.getArrayElementType() as Type;
 			const element_t_true = helpers.getTrueType(element_t);
-			return element_t_true.getText();
+
+			if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray)
+				return element_t_true.getText();
+			else
+				return helpers.EscapedName(element_t_true);
+		}
+		throw new Error("unable to get data type name");
 	}
 
 	// only valid for properties that are either `complex` of `array of complex`
@@ -118,10 +120,9 @@ export class type_property{
 			return this._constraints as Array<modeltypes.ConstraintModel>;
 
 		const constraints = new  Array<modeltypes.ConstraintModel>();
-		const constraintsTypeNodes = this._tp.MatchIfInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-		for(let t of constraintsTypeNodes){
-			const tt = t.getType()
-			const name = tt.compilerType.symbol.escapedName.toString();
+		const constraintsTypes = this._tpEx.MatchIfInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
+		for(let tt of constraintsTypes){
+			const name = helpers.EscapedName(tt);
 			const args = new Array<any>();
 			// get args
 			tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));
@@ -149,7 +150,10 @@ export class type_property{
 		const constraints = new  Array<modeltypes.ConstraintModel>();
 		const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, true);
 		for(let t of constraintTypes){
-			const name = t.compilerType.symbol.escapedName.toString();
+			console.log(t.getText())
+			const name = helpers.EscapedName(t);
+			console.log(t.getText())
+
 			const args = new Array<any>();
 			// get args
 			t.getTypeArguments().forEach(arg => args.push(arg.getText()));
@@ -172,13 +176,11 @@ export class type_property{
 	// returns constraints filtered to "defaulting"
 	// TODO: cache all types of get*Constraints()
 	private getConstraintsByType(constraintType: string): Array<modeltypes.ConstraintModel>{
-			const constraints = new  Array<modeltypes.ConstraintModel>();
-		const constraintsTypeNodes = this._tp.MatchIfInherits(constraintType);
-		for(let t of constraintsTypeNodes){
-			const tt = t.getType()
-			const name = tt.compilerType.symbol.escapedName.toString();
+		const constraints = new  Array<modeltypes.ConstraintModel>();
+		const constraintsTypes = this._tpEx.MatchIfInherits(constraintType);
+		for(let tt of constraintsTypes){
+			const name = helpers.EscapedName(tt);
 			const args = new Array<any>();
-			// get args
 			tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString(arg.getText())));
 		const c = new property_constraint(name, args);
 
@@ -214,7 +216,7 @@ export class type_property{
 		const constraints = new  Array<modeltypes.ConstraintModel>();
 		const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
 		for(let t of constraintTypes){
-			const name = t.compilerType.symbol.escapedName.toString();
+			const name = helpers.EscapedName(t);
 			const args = new Array<any>();
 			// get args
 			t.getTypeArguments().forEach(arg => args.push(arg.getText()));
@@ -246,8 +248,8 @@ export class type_property{
 			errors.push(helpers.createLoadError(message));
 			return false;
 		}
-
-		this._tp = new helpers.typer(typeNode);
+		const t = typeNode.getType()
+		this._tpEx = new helpers.typerEx(t);
 
 		// weather or not the property defined as an intersection, we need to make
 		// sure that only ONE type is the data type, the rest are constraints
@@ -255,7 +257,7 @@ export class type_property{
 		// fancy_property: string & int & Required (NOT OK: data type is intersecting)
 		// fancy_property: Required & MustMatch<..> (NOT OK: there is no data type)
 		// TODO check for union types
-		const nonConstraintsTypeNodes = this._tp.MatchIfNotInherits("PropertyConstraint");
+		const nonConstraintsTypeNodes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
 		if(nonConstraintsTypeNodes.length != 1){
 			// let us assume that it was not defined
 			let message = `invalid data type for property ${this.Name}. must have a data type defined`;

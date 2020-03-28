@@ -1,4 +1,4 @@
-import * as adltypes from './adl'
+import { AdlDataType } from './types'
 import * as constraints from '../constraints/module'
 
 /** Gets the base type of a literal type */
@@ -22,7 +22,8 @@ type Version<low, high = any> = any;
 // TODO: Create a dictionary that has
 // validation for keys and values
 /** an dictionary of key(string)/value pairs */
-export interface Dictionary<T>  extends adltypes.AdlDataType{
+
+export interface Dictionary<T> {
   [key: string]: T;
 }
 
@@ -32,21 +33,21 @@ export interface Dictionary<T>  extends adltypes.AdlDataType{
  */
 
 /** a value representing a Calendar date */
-export interface Date extends adltypes.AdlDataType {}
+export interface Date extends AdlDataType {}
 
 /** a value representing a Time */
-export  interface Time extends adltypes.AdlDataType {}
+export  interface Time extends AdlDataType {}
 
 
 /** a duration
  *
  * @todo - format?
 */
-export type duration = string & adltypes.AdlDataType;
+export type duration = string & AdlDataType;
 
 /** a universally unique ID */
 export type uuid = string &
-									 adltypes.AdlDataType &
+									 AdlDataType &
 									 constraints.MustMatch<'^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}$'>;
 
 /** A Uniform Resource Identifier (URI) is a string of characters that unambiguously identifies a particular resource.
@@ -54,35 +55,35 @@ export type uuid = string &
  * @see https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 export type uri = string &
-									adltypes.AdlDataType &
+									AdlDataType &
 									constraints.MustMatch<'^[A-Za-z][A-Za-z0-9+\-.]*:.*^'>;
 
 /** a single character  */
 export type char = string &
-									 adltypes.AdlDataType &
+									 AdlDataType &
 									 constraints.MinLength<1> & constraints.MaxLength<1>;
 
 /** an ISO 8601 Date format
  *
  * @todo - should this have a MustMatch?
  */
-export type date = string & Date;
+export type date = string & AdlDataType;
 
 /** an ISO 8601 DateTime format
  *
  * @todo - should this have a MustMatch?
  */
-export type datetime = string & Date & Time;
+export type datetime = string & AdlDataType;
 
 /** an RFC 1123 date time format
  *
  * @todo - should this have a MustMatch?
 */
-export type datetimeRfc1123 = string & Date & Time;
+export type datetimeRfc1123 = string & AdlDataType;
 
 
  /** a value encoded as base64 */
-export  interface Base64 extends adltypes.AdlDataType {}
+export  interface Base64 extends AdlDataType {}
 
   /** a value encoded as raw text (do not UriEncode for transport)  */
-export  interface Raw extends adltypes.AdlDataType{}
+export  interface Raw extends AdlDataType{}

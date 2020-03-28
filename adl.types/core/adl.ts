@@ -113,8 +113,3 @@ export class error{
 
 // errorList is a list of errors
 export class errorList extends Array<error>{}
-
-
-// represents adl data types, any primitive or non-primitive must exten this type.
-export interface AdlDataType{}
-

@@ -5,4 +5,3 @@
 import { DefaultingConstraint } from './types'
 
 export interface DefaultValue<v extends any> extends DefaultingConstraint{}
-
