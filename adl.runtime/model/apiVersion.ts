@@ -16,24 +16,14 @@ import { versioned_type } from './apiType'
 export class api_version{
 	private _typeInfos = new Map<string, modeltypes.VersionedApiTypeModel>();
 
+	private _moduleName: string = "";
+	private _versionName: string ="";
 	get Name(): string{
-		var name = this.tp.MatchSingle("ApiVersion");
-		if(!name) return "";
-
-		var ta = (name as TypeReferenceNode).getTypeArguments();
-		if(ta.length == 0) return "";
-
-		return helpers.quotelessString(ta[0].getText());
+		return this._versionName;
 	}
 
 	get ModuleName(): string{
-		var mod = this.tp.MatchSingle("ModuleName");
-		if(!mod) return "";
-
-		var ta = (mod as TypeReferenceNode).getTypeArguments();
-		if (ta.length == 0) return "";
-
-		return helpers.quotelessString(ta[0].getText());
+		return this._moduleName;
 	}
 
 	get VersionedTypes(): Iterable<modeltypes.VersionedApiTypeModel> {
@@ -49,9 +39,33 @@ export class api_version{
 		return this._typeInfos.get(name);
 	}
 
-	constructor(private project: Project, private rootPath: string, private tp: helpers.typer, private apiModel: modeltypes.ApiModel){}
+	constructor(private project: Project, private rootPath: string, private tp: helpers.typerEx, private apiModel: modeltypes.ApiModel){}
 
 	load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
+		const mod = this.tp.MatchIfInheritsSingle(adltypes.CONSTRAINT_NAME_MODULENAME);
+		if(!mod) {
+			const message = `failed to load api-version. can't find ModuleFile constraint`;
+			errors.push(helpers.createLoadError(message));
+			options.logger.err(message);
+			return false;
+		}
+
+		// set module name
+		const ta = mod.getTypeArguments();
+		this._moduleName = helpers.quotelessString(ta[0].getText());
+
+		const apiVersionName = this.tp.MatchIfInheritsSingle(adltypes.CONSTRAINT_NAME_APIVERSIONNAME);
+		if(!apiVersionName) {
+			const message = `failed to load api-version. can't find ApiVersion constraint`;
+			errors.push(helpers.createLoadError(message));
+			options.logger.err(message);
+			return false;
+		}
+		// set version name
+		const ta_versionName = apiVersionName.getTypeArguments();
+		this._versionName = helpers.quotelessString(ta_versionName[0].getText());
+
+		// now we can load it
 		const moduleFilePath = this.rootPath + "/" +  this.ModuleName + "/" + "module.ts"
 		const moduleFile = this.project.getSourceFile(moduleFilePath);
 		if(!moduleFile){
@@ -75,7 +89,7 @@ export class api_version{
 					return;
 				}
 
-				let tp: helpers.typer = new helpers.typer(typeNode);
+				let tp: helpers.typerEx = new helpers.typerEx(typeNode.getType());
 				let versionedApiTypeInfo: versioned_type = new versioned_type(ta, tp, this.apiModel);
 				const loaded = versionedApiTypeInfo.load(options, errors);
 
@@ -99,5 +113,4 @@ export class api_version{
 
 			return result;
 	}
-
 }

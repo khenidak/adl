@@ -26,17 +26,17 @@ import * as core from '../normalized/module'
 // Auto converter can convert between versions based on field names.
 // since all fields are mapped.
 // (The cli --validate command will catch situations where fields are not)
-export type vm_resource_20200909 = arm.ArmResource<'vm', 'virtualmachine', core.VirtualMachineProps, VirtualMachine>;
+export type vm_resource_20200909 = adltypes.ApiType<'vm', 'virtualmachine', core.VirtualMachineProps, VirtualMachine>;
 
 // resource two is just another resource my rp exposes
 // resource two uses custom versioner, hence it does not use the auto versioner stuff
-export type two_resource_20200909 = arm.CustomArmResource<'resource_two', 'resource-two',core.ResourceTwoProps, ResourceTwo, ResourceTwoVersioner_20200909>;
+export type two_resource_20200909 = adltypes.CustomApiType<'resource_two', 'resource-two',core.ResourceTwoProps, ResourceTwo, ResourceTwoVersioner_20200909>;
 
 // resource three in this version is normal resource, nothing special about it
-export type three_resource_20200909 = arm.ArmResource<'resource_three', 'resource-three',core.ResourceThreeProps, ResourceThree> & adltypes.ReadOnlyType;
+export type three_resource_20200909 = adltypes.ApiType<'resource_three', 'resource-three',core.ResourceThreeProps, ResourceThree> & adltypes.ReadOnlyType;
 
 // resource four  has custom convertor
-export type four_resource_20200909 = arm.CustomArmResource<'resource_four', 'resource-four', core.ResourceFourProps,ResourceFour, ResourceFourVersioner_20200909>
+export type four_resource_20200909 = adltypes.CustomApiType<'resource_four', 'resource-four', core.ResourceFourProps,ResourceFour, ResourceFourVersioner_20200909>
 
 // any imperative code needs to be exported at the package level
 export { ResourceFourVersioner_20200909 } from './resource_four'

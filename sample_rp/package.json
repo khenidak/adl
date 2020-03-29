@@ -2,11 +2,11 @@
   "name": "sample_rp",
   "version": "1.0.0",
   "description": "",
-  "main": "rp.ts",
+  "main": "api-service.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p .",
-    "run" : "nodejs index.js"
+    "run" : "echo 'run command is not configured'"
   },
   "author": "",
   "license": "ISC",

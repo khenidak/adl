@@ -85,7 +85,7 @@ export class api_model implements modeltypes.ApiModel{
 							return;
 					}
 
-					const tp: helpers.typer = new helpers.typer(typeNode);
+					const tp: helpers.typerEx = new helpers.typerEx(typeNode.getType());
 					const versionModel: api_version = new api_version(this.project, this.rootPath, tp, this);
 					const loaded = versionModel.load(options, errors);
 
@@ -132,7 +132,7 @@ export class api_model implements modeltypes.ApiModel{
 						return;
 					}
 
-					const tp: helpers.typer = new helpers.typer(typeNode);
+					const tp: helpers.typerEx = new helpers.typerEx(typeNode.getType());
 					var normalizedTypeModel = new normalized_type(ta, tp, this);
 					const loaded = normalizedTypeModel.load(options, errors);
 					if(!loaded){
@@ -153,7 +153,7 @@ export class api_model implements modeltypes.ApiModel{
 	}
 
 	async load(options: modeltypes.apiProcessingOptions, errors: adltypes.errorList): Promise<boolean>{
-		const mainFilePath = this.rootPath + "/" +"rp.ts";
+		const mainFilePath = this.rootPath + "/" +"api-service.ts";
 		const mainFile = this.project.getSourceFile(mainFilePath);
 
 		// failed to load?
@@ -175,8 +175,7 @@ export class api_model implements modeltypes.ApiModel{
 		await this.project.emit(); // TODO compilation errors.
 		const outDir = (this.project.compilerOptions.get().outDir as string);
 
-		//TODO: once we fix the main file issue
-		this._imported = await import(outDir + "/rp.js");
+		this._imported = await import(outDir + "/api-service.js");
 
 		// now that w have loaded the source code we need to check if versioner
 		// referenced in each VersionedApiTypeModel  is exported.

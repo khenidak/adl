@@ -6,8 +6,6 @@ import * as adltypes from '@azure-tools/adl.types';
 import * as helpers from './helpers';
 import { api_model } from './apiModel';
 
-
-
 // Model types
 // an arbitrary type that supports loading with success failure returns
 export interface loadableObject{

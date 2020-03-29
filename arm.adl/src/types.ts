@@ -28,7 +28,7 @@ export class ArmCommonNormalized<props extends adltypes.Normalized>{
 
 // ArmCommonNormalizer is  normalizer for ArmCommonNormalized
 // it wraps provided normalizer into a larger normalizer
-class ArmCommonNormalizer<props extends adltypes.Normalized, normalizer extends adltypes.Normalizer<props>>{
+export class ArmCommonNormalizer<props extends adltypes.Normalized, normalizer extends adltypes.Normalizer<props>>{
 	Default(obj: ArmCommonNormalized<props>, errors: adltypes.errorList) : void {
 			//TODO default arm resource and then default inner props
 	}
@@ -54,7 +54,7 @@ export interface ArmNormalizedResource<name extends string, props extends adltyp
 
 
 // ArmCommon is common arm properties for a versioned resource
-class ArmCommon<versionedProps extends adltypes.Versioned>{
+export class ArmCommon<versionedProps extends adltypes.Versioned>{
 	// TODO: do we need this?
 	apiVersion?: string; // TODO: version  validation
 	name: ArmResourceName;

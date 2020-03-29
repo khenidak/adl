@@ -8,6 +8,19 @@ import * as helpers from './helpers';
 // allows the property loading logic to create an api type model
 // without having to create reference to concerete types
 type apiTypeModelCreator = (t: Type) => modeltypes.ApiTypeModel;
+// unpacks a type until it reaches a type that is:
+// not an intersecting
+// not an adl constraint
+// it assumes that max of one non constraint exists
+function getPropertyTrueType(tt: Type): Type{
+	if(tt.isIntersection()){
+		const typer = new helpers.typerEx(tt);
+		const nonConstraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, false);
+		return getPropertyTrueType(nonConstraintTypes[0]);
+	}
+
+	return tt;
+}
 
 
 // represents a constraint
@@ -34,7 +47,7 @@ export class type_property{
 		const nonConstraintsTypes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
 		const t = nonConstraintsTypes[0]; // property load() ensures that we have only one in this list
 
-		const true_t = helpers.getTrueType(t);
+		const true_t = getPropertyTrueType(t);
 		this._dataType_trueType = true_t;
 		return this._dataType_trueType as Type;
 	}
@@ -71,7 +84,7 @@ export class type_property{
 		if(this.isArray()){
 			const true_t = this.PropertyDataType_TrueType;
 			const element_t = true_t.getArrayElementType() as Type;
-			const element_t_true = helpers.getTrueType(element_t);
+			const element_t_true = getPropertyTrueType(element_t);
 
 			if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray)
 				return element_t_true.getText();
@@ -104,7 +117,7 @@ export class type_property{
 		if(true_t.isString() || true_t.isNumber()) return modeltypes.PropertyDataTypeKind.Scalar;
 		if(true_t.isArray()){
 				const element_t = true_t.getArrayElementType() as Type;
-				const element_t_true = helpers.getTrueType(element_t);
+				const element_t_true = getPropertyTrueType(element_t);
 
 				if(element_t_true.isString() || element_t_true.isNumber()) return modeltypes.PropertyDataTypeKind.ScalarArray;
 					return modeltypes.PropertyDataTypeKind.ComplexArray;

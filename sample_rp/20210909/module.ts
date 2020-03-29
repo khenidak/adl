@@ -27,17 +27,13 @@ import * as core from '../normalized/module'
 // vm is a top level resource
 // note: VM does not require any special conversion logic so wre are composing it with  AutoVersioned<T>
 // since all fields are mapped. (The cli --validate command will catch situations where fields are not)
-export type vm_resource_20210909 = arm.ArmResource<'vm', 'virtualmachine', core.VirtualMachine, VirtualMachine>;
+export type vm_resource_20210909 = adltypes.ApiType<'vm', 'virtualmachine', core.VirtualMachine, VirtualMachine>;
 
 // resource two is just another resource my rp exposes
-export type two_20210909 =  arm.ArmResource<'resource_two', 'resource-two', core.ResourceTwo, ResourceTwo>;
+export type two_20210909 = adltypes.ApiType<'resource_two', 'resource-two', core.ResourceTwo, ResourceTwo>;
 
 /* notice: no resource 3. this version does not have it */
-export type four_20210909 = arm.CustomArmResource<'resource_four', 'resource-four', core.ResourceFour, ResourceFour, ResourceFourVersioner>;
-
+export type four_20210909 = adltypes.CustomApiType<'resource_four', 'resource-four', core.ResourceFour, ResourceFour, ResourceFourVersioner>;
 
 // any imperative code needs to be exported at the package level
 export { ResourceFourVersioner } from './resource_four'
-
-
-

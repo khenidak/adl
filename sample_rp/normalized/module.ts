@@ -23,7 +23,6 @@ export type VirtualMachine = adltypes.CustomNormalizedApiType<'vm', VirtualMachi
 //resource two normalized. That one require imparive and declarative work
 export type ResourceTwo = adltypes.CustomNormalizedApiType<'resource_two', ResourceTwoProps, ResourceTwoPropsNormalizer>;
 
-
 // resource three is all declarative
 //export type ResourceThree = adltypes.NormalizedApiType<'resource_three', ResourceThreeProps>;
 export type ResourceThree = adltypes.CustomNormalizedApiType<'resource_three', ResourceThreeProps, adltypes.AutoNormalizer<ResourceThreeProps>>;
