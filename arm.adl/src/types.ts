@@ -11,86 +11,67 @@ export type ArmResourceId = string & adltypes.MustMatch<'TODO: ARM RESOURCE ID R
 export type ResourceType = string & adltypes.MustMatch<'TODO: ARM RESOURCE TYPE REG EXP'>
 export type ArmResourceName = string & adltypes.MustMatch<'TODO: ARM RESOURCE TYPE REG EXP'>;
 
-// ArmCommonNormalized is arm common properties for normalized resource
-// props is what is provided by arm rp api designer.
-// props needs to be a class
-export class ArmCommonNormalized<props extends adltypes.Normalized>{
+
+// Arm envelop for normalized resource
+export class ArmNormalizedResource<props extends adltypes.Normalized>{
     name: ArmResourceName;
     id: ArmResourceId;
     resourceGroup: ResourceGroup;
-  location: Location;
+    location: Location;
     type: ResourceType;
-  tags?: adltypes.Dictionary<string>;
+//TODO
+//  tags?: adltypes.Dictionary<string>;
     etag?: string;
     properties: props;
 }
 
 
-// ArmCommonNormalizer is  normalizer for ArmCommonNormalized
-// it wraps provided normalizer into a larger normalizer
-export class ArmCommonNormalizer<props extends adltypes.Normalized, normalizer extends adltypes.Normalizer<props>>{
-    Default(obj: ArmCommonNormalized<props>, errors: adltypes.errorList) : void {
-            //TODO default arm resource and then default inner props
+// ArmResourceNormalizer normalizes arm resource
+// Resources that needs imperative normalizer must use
+// use this one
+// Note: we relay on auto conversion for arm core (for now).
+export class ArmnNormalizer<props extends adltypes.Normalized,
+                            normalizer extends adltypes.Normalizer<props>>{
+    Default(obj: ArmNormalizedResource<props>, errors: adltypes.errorList) : void {
+        const actual:normalizer = {} as normalizer;
+        actual.Default(obj.properties, errors);
     }
 
-    Validate (old: ArmCommonNormalized<props> | undefined, newObject: ArmCommonNormalized<props>, errors: adltypes.errorList) : void{
-            //TODO  validate arm resource and then validate inner prop
+    Validate (old: ArmNormalizedResource<props> | undefined, newObject: ArmNormalizedResource<props>, errors: adltypes.errorList) : void{
+        const actual:normalizer = {} as normalizer;
+        actual.Validate(old ? old.properties : undefined, newObject.properties, errors);
     }
 }
 
-
-// CustomArmNormalizedResource extends adl own with arm specific fiellds
-// note:
-// 1. we wrap provided props with our arm own defs
-// 2. we wrap provided normalizer with arm's
-export interface CustomArmNormalizedResource<name extends string, props extends adltypes.Normalized, normalizer extends adltypes.Normalizer<props>> extends adltypes.CustomNormalizedApiType<name, ArmCommonNormalized<props>, ArmCommonNormalizer<props, normalizer>>{
-}
-
-// This is the *auto* converted version. Arm can use its own auto converters to do fancy stuff as needed.
-export interface ArmNormalizedResource<name extends string, props extends adltypes.Normalized>
-                extends CustomArmNormalizedResource<name, props, adltypes.AutoNormalizer<props>>{
-}
-
-
-
-// ArmCommon is common arm properties for a versioned resource
-export class ArmCommon<versionedProps extends adltypes.Versioned>{
-    // TODO: do we need this?
+// Arm envelop for versioned resource.
+export class ArmVersionedResource<versionedProps extends adltypes.Versioned>
+                        implements adltypes.Versioned{
     apiVersion?: string; // TODO: version  validation
     name: ArmResourceName;
     id: ArmResourceId;
     resourceGroup: ResourceGroup;
-  location: Location;
+    location: Location;
     type: ResourceType;
-  tags?: adltypes.Dictionary<string>;
+//TODO
+  //tags?: adltypes.Dictionary<string>;
     etag?: string;
     properties: versionedProps;
 
 }
 
-//ArmCommonVersioner is the versioner of common properties for a versioned resource
-// we have avoided inhiriting ArmCommonNormalized to allow normalized and versioned
-// to grow as needed with dep on the other
-// TODO: call nested
-class ArmCommonVersioner<props extends adltypes.Normalized, versionedProps extends adltypes.Versioned, versioner extends adltypes.Versioner<props, versionedProps>> {
-    // Normalize performs conversion from versioned api type => normalized api type
-    Normalize(versioned: ArmCommon<versionedProps>, normalized: ArmCommonNormalized<props>, errors: adltypes.errorList) : void{
-                    //TODO
+class ArmVersioner<normalizedProps extends adltypes.Normalized,
+                                    versionedProps extends adltypes.Versioned,
+                                    versioner extends adltypes.Versioner<normalizedProps, versionedProps>>
+                                    implements adltypes.Versioner<ArmNormalizedResource<normalizedProps>, ArmNormalizedResource<versionedProps>>{
+    // normalize performs conversion from versioned api type => normalized api type
+    Normalize(versioned: ArmVersionedResource<versionedProps>, normalized: ArmNormalizedResource<normalizedProps>, errors: adltypes.errorList) : void{
+                const actual: versioner = {} as versioner;
+                actual.Normalize(versioned.properties, normalized.properties, errors);
             }
 
-    // Convert performs conversion from normalized api type => versioned api type
-    Convert(normalized: ArmCommonNormalized<props> , versioned: ArmCommon<versionedProps>, errors: adltypes.errorList): void{
-                 // TODO
+    // convert performs conversion from normalized api type => versioned api type
+    Convert(normalized: ArmNormalizedResource<normalizedProps> , versioned: ArmVersionedResource<versionedProps>, errors: adltypes.errorList): void{
+                const actual: versioner = {} as versioner;
+                actual.Convert(normalized.properties, versioned.properties, errors);
     }
 }
-
-// CustomArmResource is a versioned api type. Note
-// we wrap provided props and version with arm own
-export class CustomArmResource<baseName extends string, displayName extends string,props extends adltypes.Normalized, versionedProps extends adltypes.Versioned,versioner extends adltypes.Versioner<props,versionedProps>>
-                        implements adltypes.CustomApiType <baseName, displayName, ArmCommonNormalized<props>, ArmCommon<versionedProps>, ArmCommonVersioner<props, versionedProps, versioner>>{
-}
-
-
-export class ArmResource<name extends string, displayName extends string, props extends adltypes.Normalized, versionedProps extends adltypes.Versioned> implements CustomArmResource<name, displayName, props, versionedProps, adltypes.AutoVersioner<props,versionedProps>>{
-}
-
