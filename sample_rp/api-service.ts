@@ -13,8 +13,8 @@ export * from './20210909/module'
 
 
 export type apiVersion_20200909 = adltypes.ApiVersion<'2020-09-09', 'fancy-display-name'> &
-													 				adltypes.ModuleName<'20200909'>;
+                                                                    adltypes.ModuleName<'20200909'>;
 
 
 export type apiVersion_20210909 = adltypes.ApiVersion<'2021-09-09', 'fancy-display-name'> &
-													 				adltypes.ModuleName<'20210909'>;
+                                                                    adltypes.ModuleName<'20210909'>;

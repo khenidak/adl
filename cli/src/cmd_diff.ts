@@ -14,7 +14,7 @@ export class diffAction extends CommandLineAction {
   }
 
   protected onExecute(): Promise<void> {
-			return new Promise<void>( () => {return;});
+            return new Promise<void>( () => {return;});
   }
 
   protected onDefineParameters(): void {

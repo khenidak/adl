@@ -16,24 +16,24 @@ export class verifyConformanceAction extends CommandLineAction {
   }
 
   protected onExecute(): Promise<void> { // abstract
-			return new Promise<void>( () => {
-				// TODO: remove and use command args
-				const apiModel = this.ctx.store.ApiModels[0];
-				const runtime = this.ctx.machineryRuntime;
-				const errs = this.ctx.machinery.runConformance(apiModel, adlruntime.ConformanceRuleScope.Api);
+            return new Promise<void>( () => {
+                // TODO: remove and use command args
+                const apiModel = this.ctx.store.ApiModels[0];
+                const runtime = this.ctx.machineryRuntime;
+                const errs = this.ctx.machinery.runConformance(apiModel, adlruntime.ConformanceRuleScope.Api);
 
-				if(errs.length > 0){
-					console.log(`Error Type \tError Message`);
-					//TODO: once field path is wired up, we need to
-					// start printing it
+                if(errs.length > 0){
+                    console.log(`Error Type \tError Message`);
+                    //TODO: once field path is wired up, we need to
+                    // start printing it
 
-					errs.forEach(
-						e => {
-							console.log(`${e.errorType}\t${e.errorMessage}`);
-						});
-				}
+                    errs.forEach(
+                        e => {
+                            console.log(`${e.errorType}\t${e.errorMessage}`);
+                        });
+                }
 
-			});
+            });
   }
 
   protected onDefineParameters(): void {

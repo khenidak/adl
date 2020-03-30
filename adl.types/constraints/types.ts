@@ -7,7 +7,7 @@
  *
  * a constraint can be applied on a property or a type
  * note: adl.types defines the constraints without implementation
- * 			 adl.runtiume implement them
+ *           adl.runtiume implement them
 */
 // all constraint are identified by this interface
 export interface ConstraintInterface{}

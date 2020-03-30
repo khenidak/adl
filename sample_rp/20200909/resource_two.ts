@@ -10,21 +10,21 @@ import * as normalized from '../normalized/module'
  */
 
 export class ResourceTwo{
-	prop1: number;
-	prop2: string;
+    prop1: number;
+    prop2: string;
 }
 
 export class ResourceTwoVersioner_20200909 implements adltypes.Versioner<normalized.ResourceTwoProps, ResourceTwo>{
 
-	Normalize(versioned: ResourceTwo, normalized: normalized.ResourceTwoProps, errors: adltypes.errorList) :void{
-		normalized.prop1 = versioned.prop1;
-		normalized.prop2 = versioned.prop2 + `custom value added by versioner`;
-	}
+    Normalize(versioned: ResourceTwo, normalized: normalized.ResourceTwoProps, errors: adltypes.errorList) :void{
+        normalized.prop1 = versioned.prop1;
+        normalized.prop2 = versioned.prop2 + `custom value added by versioner`;
+    }
 
-	Convert(normalized: normalized.ResourceTwoProps, versioned: ResourceTwo, errors: adltypes.errorList){
-		var v = new ResourceTwo();
-		v.prop1 = normalized.prop1;
-		v.prop2 = normalized.prop2;
-		return v;
-	}
+    Convert(normalized: normalized.ResourceTwoProps, versioned: ResourceTwo, errors: adltypes.errorList){
+        var v = new ResourceTwo();
+        v.prop1 = normalized.prop1;
+        v.prop2 = normalized.prop2;
+        return v;
+    }
 }

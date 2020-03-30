@@ -17,26 +17,26 @@ import * as armtypes from '@azure-tools/arm.adl'
 
 
 export interface VirtualMachine{
-	vmId : string;
-	hardwareProfile: HWProfile;
-	storageProfile: ImageReference;
-	dataDisks: DataDisk[];
-	v1Prop: number;
-	coreCount: number & adltypes.MapTo<'totalCores'>;
+    vmId : string;
+    hardwareProfile: HWProfile;
+    storageProfile: ImageReference;
+    dataDisks: DataDisk[];
+    v1Prop: number;
+    coreCount: number & adltypes.MapTo<'totalCores'>;
 }
 
 export interface HWProfile {
-	vmSize: string & adltypes.MapTo<'virtualMachineSize'>;
+    vmSize: string & adltypes.MapTo<'virtualMachineSize'>;
 }
 
 export interface ImageReference{
-	publisher: string;
-	offer:string;
-	sku: string;
-	version: string;
+    publisher: string;
+    offer:string;
+    sku: string;
+    version: string;
 }
 
 export interface DataDisk {
-	diskId: armtypes.ArmResourceId;
+    diskId: armtypes.ArmResourceId;
 }
 

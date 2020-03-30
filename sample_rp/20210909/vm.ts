@@ -20,9 +20,9 @@ import * as adltypes from '@azure-tools/adl.types'
 
 import * as vPrev from '../20200909/vm'
 export interface VirtualMachine extends vPrev.VirtualMachine{
-	badProp: string;
-	v1Prop: number & adltypes.Removed; // <== removed
-	v2Prop?: string // <== new;
-	some_new_prop: number &
-								 adltypes.MapTo<'someProp'>;// This prop is renamed, we still don't need imperative logic
+    badProp: string;
+    v1Prop: number & adltypes.Removed; // <== removed
+    v2Prop?: string // <== new;
+    some_new_prop: number &
+                                 adltypes.MapTo<'someProp'>;// This prop is renamed, we still don't need imperative logic
 }
