@@ -78,20 +78,44 @@ export enum PropertyDataTypeKind{
 
 export interface ApiTypePropertyModel extends loadableObject{
 	readonly Name: string;
+	// primitive data type name or complex type name
+	// eg
+	// `name: string` // will report string
+	// `address: AddressClass` // will report address class
+	// alias data type are decomposed to thier basic types
+	// example: suppose a data type defined as export type int32 = number & DataType<"int32">;
+	// doctorWhoHeartCount: int32;// will report number.
 	readonly DataTypeName: string;
+	// property no longer exist on apitype
 	readonly isRemoved: boolean;
+	// all constraints defined on properties
 	readonly Constraints: Array<ConstraintModel>;
+	// all constraints defined on array element if the property type is array
 	readonly ArrayElementConstraints: Array<ConstraintModel>;
+	// all shapes of data type: one of Complex, Scalar, ComplexArray, ScalarArray
 	readonly DataTypeKind: PropertyDataTypeKind;
+	// property is optional
 	readonly isOptional: boolean;
+	// returns the complex data type for property if available;
 	readonly ComplexDataType: ApiTypeModel;
+	// don't run auto conversion on type
 	readonly isManaullyConverted: boolean;
+	// returns true if the type is aliased via DataType<Name>;
+	readonly isAliasDataType: boolean
+	// returns the alias name
+	readonly AliasDataTypeName: string;
+	// returns true if the property is defined as enum
+	readonly isEnum: boolean;
+	// returns the list of possible enum values.
+	// empty if it is not of type enum;
+	readonly EnumValues: any[];
 
 	getDefaultingConstraints(): Array<ConstraintModel>;
 	getValidationConstraints(): Array<ConstraintModel>;
 	getConversionConstraints(): Array<ConstraintModel>;
 
 	getArrayElementValidationConstraints():Array<ConstraintModel>;
+
 	isArray(): boolean;
 }
 

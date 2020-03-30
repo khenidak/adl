@@ -94,6 +94,32 @@ export class type_property{
 		throw new Error("unable to get data type name");
 	}
 
+	get isEnum(): boolean{
+		const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
+		return (enumConstraints.length != 0);
+	}
+	get EnumValues(): any[]{
+		const vals: any[] = [];
+		if(!this.isEnum) return vals;
+
+		const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
+		// would be nice if we can allow arrays . so user can do [v1...values], [v2.. values]
+		return enumConstraints[0].Arguments[0]; // must be one because we pre validate
+	}
+
+	get isAliasDataType(): boolean{
+		const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+		return dataTypes.length == 1; // must have one, we validate against that
+	}
+
+	get AliasDataTypeName(): string{
+		if(!this.isAliasDataType) return this.DataTypeName;
+		const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+
+		const c = dataTypes[0]; // first and only constraint
+		return c.Arguments[0];
+	}
+
 	// only valid for properties that are either `complex` of `array of complex`
 	// if model to be serialized this needs to return undefined.
 	get ComplexDataType(): modeltypes.ApiTypeModel{
@@ -285,6 +311,23 @@ export class type_property{
 
 		if(!this.isValidPropertyDataType()){
 			const message = `invalid data type for property ${this.Name} allowed properties are string, number, intersections, class, interface and standard js arrays`
+			options.logger.err(message);
+			errors.push(helpers.createLoadError(message));
+			return false;
+		}
+
+		// must have max of one adl.DataType
+		const dataTypes = this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+		if(dataTypes.length > 1){
+			const message = `invalid data type for property ${this.Name} multiple adl.DataType defined on property`
+			options.logger.err(message);
+			errors.push(helpers.createLoadError(message));
+			return false;
+		}
+
+		const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+		if(dataTypes.length > 1){
+			const message = `invalid data type for property ${this.Name} multiple adl.OneOf defined on property`
 			options.logger.err(message);
 			errors.push(helpers.createLoadError(message));
 			return false;

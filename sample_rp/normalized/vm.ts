@@ -13,7 +13,7 @@ export interface VirtualMachineProps{
 
 	totalCores?: number;
 
-	v1Prop: number & adltypes.Range<5, 10>;
+	v1Prop: adltypes.int64 & adltypes.Range<5, 10>;
 
 	v2Prop?: string & adltypes.DefaultValue<'defaulted  declartively'>;
 }

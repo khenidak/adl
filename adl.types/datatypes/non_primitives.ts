@@ -1,5 +1,6 @@
-import { AdlDataType } from './types'
-import * as constraints from '../constraints/module'
+import { DataType } from './types'
+import * as adlconstraints from '../constraints/module'
+// TODO: these types needs to be validated
 
 /** Gets the base type of a literal type */
 type TypeOf<T> =
@@ -33,57 +34,55 @@ export interface Dictionary<T> {
  */
 
 /** a value representing a Calendar date */
-export interface Date extends AdlDataType {}
+export type date = string & DataType<"date">;
 
 /** a value representing a Time */
-export  interface Time extends AdlDataType {}
+export type time = string & DataType<"time">;
 
 
 /** a duration
  *
  * @todo - format?
 */
-export type duration = string & AdlDataType;
+export type duration = string  & DataType<"duration">;
+
+/** the number of seconds that have passed since 00:00:00 UTC Thursday, 1 January 1970. */
+export type unixtime = number  & DataType<"unixtime">;
 
 /** a universally unique ID */
 export type uuid = string &
-									 AdlDataType &
-									 constraints.MustMatch<'^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}$'>;
+									 DataType<"uuid"> &
+									 adlconstraints.MustMatch<'^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}$'>;
 
 /** A Uniform Resource Identifier (URI) is a string of characters that unambiguously identifies a particular resource.
  *
  * @see https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 export type uri = string &
-									AdlDataType &
-									constraints.MustMatch<'^[A-Za-z][A-Za-z0-9+\-.]*:.*^'>;
+									DataType<"uri"> &
+									adlconstraints.MustMatch<'^[A-Za-z][A-Za-z0-9+\-.]*:.*^'>;
 
 /** a single character  */
 export type char = string &
-									 AdlDataType &
-									 constraints.MinLength<1> & constraints.MaxLength<1>;
-
-/** an ISO 8601 Date format
- *
- * @todo - should this have a MustMatch?
- */
-export type date = string & AdlDataType;
+									 DataType<"char"> &
+									 adlconstraints.MinLength<1> & adlconstraints.MaxLength<1>;
 
 /** an ISO 8601 DateTime format
  *
  * @todo - should this have a MustMatch?
  */
-export type datetime = string & AdlDataType;
+export type datetime = string & DataType<"datetime">;
 
 /** an RFC 1123 date time format
  *
  * @todo - should this have a MustMatch?
 */
-export type datetimeRfc1123 = string & AdlDataType;
+export type datetimeRfc1123 = string & DataType<"datetimeRfc1123">;
 
 
  /** a value encoded as base64 */
-export  interface Base64 extends AdlDataType {}
+export  type base64 = string & DataType<"base64">;
 
-  /** a value encoded as raw text (do not UriEncode for transport)  */
-export  interface Raw extends AdlDataType{}
+//TODO:
+ /** a value encoded as raw text (do not UriEncode for transport)  */
+//export  interface Raw extends AdlDataType{}

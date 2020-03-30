@@ -15,13 +15,13 @@ export class showStoreAction extends CommandLineAction {
 
 	private getPropertiesConstraintsAsText(p: adlruntime.ApiTypePropertyModel): string{
 		let constraintsAsText = ""
-		for(const c of p.Constraints){
-			constraintsAsText = `${constraintsAsText} | ${c.Name}`;
+		if(!p.isEnum){
+			for(const c of p.Constraints){
+				constraintsAsText = `${constraintsAsText} | ${c.Name}(${c.Arguments.join(",")})`;
+			}
+			return constraintsAsText;
 		}
-		if(constraintsAsText.length > 0){
-				constraintsAsText =  constraintsAsText;
-		}
-
+		constraintsAsText = `enum${p.EnumValues}`;
 		return constraintsAsText;
 	}
 	private printModel(scope: string, model: adlruntime.ApiModel):void{
@@ -49,7 +49,7 @@ export class showStoreAction extends CommandLineAction {
 			for(const prop  of normalizedType.Properties){
 				prefix = "    ";
 				if(!prop.isRemoved){
-					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
+					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
 				}
 			}
 		}
@@ -87,7 +87,7 @@ export class showStoreAction extends CommandLineAction {
 			for(const prop  of versionedType.Properties){
 				prefix = "     ";
 				if(!prop.isRemoved)
-					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
+					console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
 			}
 		}
 	}

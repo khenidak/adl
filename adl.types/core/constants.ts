@@ -5,6 +5,10 @@ export const INTERFACE_NAME_DEFAULTINGCONSTRAINT:string = "DefaultingConstraint"
 export const INTERFACE_NAME_VALIDATIONCONSTRAINT: string = "ValidationConstraint";
 export const INTERFACE_NAME_CONVERSIONCONSTRAINT: string = "ConversionConstraint";
 
+export const INTERFACE_NAME_ONEOF:string = "OneOf";
+
+export const INTERFACE_NAME_DATATYPE: string= "DataType";
+
 export const INTERFACE_NAME_APITYPECONSTRAINT: string = "ApiTypeConstraint";
 
 export const CONSTRAINT_NAME_REMOVED: string = "Removed";
