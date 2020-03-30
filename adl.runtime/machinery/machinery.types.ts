@@ -10,12 +10,12 @@ export const ADL_RUNTIME_NAME = "adlruntime";
 // easy create a wide scoped rule
 export const DEFAULT_CONFORMANCE_GROUP:string = "default";
 export enum ConformanceRuleScope{
-	Api 														= 1 << 1,
+	Api 							= 1 << 1,
 	NormalizedApiType = 1 << 2,
-	ApiVersion 							= 1 << 3,
+	ApiVersion 				= 1 << 3,
 	VersionedApiType 	= 1 << 4,
-	ApiType 										= NormalizedApiType | VersionedApiType,
-	ApiTypeProperty 		= 1 << 5,
+	ApiType 					= NormalizedApiType | VersionedApiType,
+	ApiTypeProperty 	= 1 << 5,
 }
 
 export enum ConformanceKind{

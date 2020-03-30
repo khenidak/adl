@@ -206,12 +206,12 @@ export class ApiManager {
 
 
 export enum apiProcessingLogLevel{
-	Verbose = 5,
-	Info				= 4,
-	Warn 			= 3,
-	Err					= 2,
-	None  		= 0,
-	}
+	none,
+	err,
+	warn,
+	info,
+	verbose,
+}
 
 // TODO: move to package level types
 // logger
@@ -220,26 +220,39 @@ export interface apiProcessingLogger{
 	wrn(s:string): void
 	err(s:string): void
 	verbose(s:string): void
+	logLevel:apiProcessingLogLevel;
 }
 
-export class apiProcessingConsoleLogger implements apiProcessingLogger{
-	constructor(private l:apiProcessingLogLevel){}
-	private log(target_level: apiProcessingLogLevel, s:string):void{
-		// TODO
-		if(target_level <= this.l)
-			console.log("",s);
+class apiProcessingConsoleLogger implements apiProcessingLogger{
+	private levelName: string;
+	private levelNamePrefix: string;
+	private l:apiProcessingLogLevel;
+	get logLevel(){ return this.l;}
+	set logLevel(val: apiProcessingLogLevel){
+		this.l = val;
+		this.levelName = apiProcessingLogLevel[this.l];
+		this.levelNamePrefix = this.levelName.charAt(0).toUpperCase();
+		this.verbose(`console logger has changed its log level to (${this.levelName})`);
 	}
-	info(s: string): void { this.log(apiProcessingLogLevel.Info, s);}
-	wrn(s:string): void{ this.log(apiProcessingLogLevel.Warn, s);}
-	err(s:string): void{ this.log(apiProcessingLogLevel.Err, s);}
-	verbose(s:string): void{ this.log(apiProcessingLogLevel.Verbose,s);}
+
+	constructor(level:apiProcessingLogLevel){
+		this.logLevel = level;
+	}
+	private log(target_level: apiProcessingLogLevel, s:string):void{
+		if(target_level <= this.l)
+			console.log("",`${this.levelNamePrefix}: ${s}`);
+	}
+	info(s: string): void { this.log(apiProcessingLogLevel.info, s);}
+	wrn(s:string): void{ this.log(apiProcessingLogLevel.warn, s);}
+	err(s:string): void{ this.log(apiProcessingLogLevel.err, s);}
+	verbose(s:string): void{ this.log(apiProcessingLogLevel.verbose,s);}
 }
 
 // ApiLoadOptions logger, log level and other
 // settings used in processing (validation, loading etc).
 export class apiProcessingOptions{
 		// default log level none
-		private _logLevel: apiProcessingLogLevel = apiProcessingLogLevel.Err;
+		private _logLevel: apiProcessingLogLevel = apiProcessingLogLevel.info;
 		private _logger: apiProcessingLogger;
 
 		constructor()
