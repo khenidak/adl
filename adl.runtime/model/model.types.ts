@@ -69,10 +69,10 @@ export interface ConstraintModel{
     readonly Arguments: Array<any>;
 }
 export enum PropertyDataTypeKind{
-    Complex             = "Complex",
-    ComplexArray    = "ComplexArray",
-    ScalarArray     = "ScalarArray",
-    Scalar              = "Scalar",
+    Complex      = "Complex",
+    ComplexArray = "ComplexArray",
+    ScalarArray  = "ScalarArray",
+    Scalar       = "Scalar",
 }
 
 

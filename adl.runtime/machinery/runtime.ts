@@ -887,12 +887,12 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
     // converts from one api version to another
     convert(payload: string | any,
-                                    apiName: string,
-                                    srcVersionName: string,
-                                    srcVersionedApiTypeName: string,
-                                    tgtVersionName: string,
-                                    tgtVersionedApiTypeName: string,
-                                    errors: adltypes.errorList): adltypes.Versioned{
+            apiName: string,
+            srcVersionName: string,
+            srcVersionedApiTypeName: string,
+            tgtVersionName: string,
+            tgtVersionedApiTypeName: string,
+            errors: adltypes.errorList): adltypes.Versioned{
 
         // round trip
         const normalized = this.normalize(payload, apiName, srcVersionName, srcVersionedApiTypeName, errors);

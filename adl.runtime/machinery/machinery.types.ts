@@ -10,18 +10,18 @@ export const ADL_RUNTIME_NAME = "adlruntime";
 // easy create a wide scoped rule
 export const DEFAULT_CONFORMANCE_GROUP:string = "default";
 export enum ConformanceRuleScope{
-    Api                             = 1 << 1,
+    Api               = 1 << 1,
     NormalizedApiType = 1 << 2,
-    ApiVersion              = 1 << 3,
-    VersionedApiType    = 1 << 4,
-    ApiType                     = NormalizedApiType | VersionedApiType,
-    ApiTypeProperty     = 1 << 5,
+    ApiVersion        = 1 << 3,
+    VersionedApiType  = 1 << 4,
+    ApiType           = NormalizedApiType | VersionedApiType,
+    ApiTypeProperty   = 1 << 5,
 }
 
 export enum ConformanceKind{
-    Shape       = 1 << 1,
+    Shape    = 1 << 1,
     Semantic = 1 << 2,
-    All                     = Shape & Semantic,
+    All      = Shape & Semantic,
 }
 
 export enum ConformanceViolationKind{
@@ -45,7 +45,7 @@ export class ConformanceError{
     ModelName: string | undefined;
     VersionName: string| undefined;
     NormalizedTypeName: string |  undefined;
- VersionedTypeName: string| undefined;
+    VersionedTypeName: string| undefined;
     TypePropertyName: string | undefined;
 }
 
@@ -198,42 +198,42 @@ export interface Machinery{
 export interface ApiRuntime{
     // runs defaults for a normalized type
     default_normalized(payload: string | any,
-                                                                                apiName: string,
-                                                                                normalizedApiTypeName: string,
-                                                                                errors: adltypes.errorList): void;
+                       apiName: string,
+                       normalizedApiTypeName: string,
+                       errors: adltypes.errorList): void;
 
     // runs defaults on a versioned type (declartive only)
     default_versioned(payload: string | any,
-                                                                            apiName: string,
-                                                                            versionName: string,
-                                                                            versionedApiTypeName: string,
-                                                                            errors: adltypes.errorList): void;
+                      apiName: string,
+                      versionName: string,
+                      versionedApiTypeName: string,
+                      errors: adltypes.errorList): void;
 
     // converts a versioned payload to normalized one
     // runs constraints (validation, defaulting and conversion).
     normalize(payload: string | any,
-                                            apiName: string,
-                                            versionName: string,
-                                            versionedApiTypeName: string,
-                                            errors: adltypes.errorList): adltypes.Normalized;
+              apiName: string,
+              versionName: string,
+              versionedApiTypeName: string,
+              errors: adltypes.errorList): adltypes.Normalized;
 
     // converts normalized type to versioned
     // runs constraints (defaulting and versioning).
     denormalize(normalizedPayload: string | any,
-                                                    apiName: string,
-                                                    tgtVersionName: string,
-                                                    tgtVersionedApiTypeName: string,
-                                                    errors: adltypes.errorList): adltypes.Versioned;
+                apiName: string,
+                tgtVersionName: string,
+                tgtVersionedApiTypeName: string,
+                errors: adltypes.errorList): adltypes.Versioned;
 
     // converts a versioned type to another.
     // runs all constraints
     convert(payload: string | any,
-                                    apiName: string,
-                                    srcVersionName: string,
-                                    srcVersionedApiTypeName: string,
-                                    tgtVersionName: string,
-                                    tgtVersionedApiTypeName: string,
-                                    errors: adltypes.errorList): adltypes.Versioned;
+            apiName: string,
+            srcVersionName: string,
+            srcVersionedApiTypeName: string,
+            tgtVersionName: string,
+            tgtVersionedApiTypeName: string,
+            errors: adltypes.errorList): adltypes.Versioned;
 
     create_normalized_instance(apiName: string, normalizedApiTypeName: string /* TODO: complete:bool i.e. fuzzed */ ): adltypes.Normalized;
     create_versioned_instance(apiName: string, versionName: string, versionedApiTypeName: string, /* TODO: complete:bool i.e. fuzzed */): adltypes.Versioned;
