@@ -1,4 +1,4 @@
-import { PropertySignature, PropertyDeclaration, Node, TypeGuards, TypeNode, Type } from 'ts-morph'
+import { ClassDeclaration, InterfaceDeclaration, PropertySignature, PropertyDeclaration, Node, TypeGuards, TypeNode, Type } from 'ts-morph'
 
 import * as adltypes from '@azure-tools/adl.types';
 import * as modeltypes from './model.types';
@@ -8,18 +8,59 @@ import * as helpers from './helpers';
 // allows the property loading logic to create an api type model
 // without having to create reference to concerete types
 type apiTypeModelCreator = (t: Type) => modeltypes.ApiTypeModel;
+// given a declaration and a type. it finds if "name" is defined as an argument and gets the actual type of aname
+// example:
+// declaration: Person<T>{Address:T}
+// type:Person<string>
+// Find the actual value of T
+function getTypeArgumentType(parentDeclaration:ClassDeclaration | InterfaceDeclaration, usedT: Type, name:string): Type | undefined{
+    let index = -1;
+    let current = 0;
+    // check in declaration, to get the index
+    for(const tp of parentDeclaration.getTypeParameters()){
+        if(tp.getName() == name){
+            index = current;
+            break;
+        }
+        current++;
+    }
+    if(index == -1) return undefined;
+    let t: Type | undefined = undefined;
+    current = 0;
+    for(const ta of usedT.getTypeArguments()){
+        if(current == index){
+            t = ta;
+            break;
+        }
+        current ++;
+    }
+    return t;
+}
+
 // unpacks a type until it reaches a type that is:
 // not an intersecting
 // not an adl constraint
+// it follows type args example
+// class X<T>{
+// prop:T
+//}
+// it will follow the T
 // it assumes that max of one non constraint exists
-function getPropertyTrueType(tt: Type): Type{
-    if(tt.isIntersection()){
-        const typer = new helpers.typerEx(tt);
+function getPropertyTrueType(containerDeclaration:ClassDeclaration | InterfaceDeclaration, containerType: Type, tt: Type): Type{
+    let actual = tt; // assume it is a regular type
+    // find it as type argument of the parent declaration
+    const fromTypeArg = getTypeArgumentType(containerDeclaration, containerType, tt.getText());
+    if(fromTypeArg){// this type is from a Type argument. use the type in type argument
+        actual = fromTypeArg;
+     }
+
+    if(actual.isIntersection()){ // drill deeper
+        const typer = new helpers.typerEx(actual);
         const nonConstraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, false);
-        return getPropertyTrueType(nonConstraintTypes[0]);
+        return getPropertyTrueType(containerDeclaration, containerType, nonConstraintTypes[0]);
     }
 
-    return tt;
+    return actual;
 }
 
 
@@ -47,7 +88,7 @@ export class type_property{
         const nonConstraintsTypes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
         const t = nonConstraintsTypes[0]; // property load() ensures that we have only one in this list
 
-        const true_t = getPropertyTrueType(t);
+        const true_t = getPropertyTrueType(this.containerDeclaration, this.containerType, t);
         this._dataType_trueType = true_t;
         return this._dataType_trueType as Type;
     }
@@ -84,7 +125,7 @@ export class type_property{
         if(this.isArray()){
             const true_t = this.PropertyDataType_TrueType;
             const element_t = true_t.getArrayElementType() as Type;
-            const element_t_true = getPropertyTrueType(element_t);
+            const element_t_true = getPropertyTrueType(this.containerDeclaration, this.containerType, element_t);
 
             if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray)
                 return element_t_true.getText();
@@ -143,7 +184,7 @@ export class type_property{
         if(true_t.isString() || true_t.isNumber()) return modeltypes.PropertyDataTypeKind.Scalar;
         if(true_t.isArray()){
                 const element_t = true_t.getArrayElementType() as Type;
-                const element_t_true = getPropertyTrueType(element_t);
+                const element_t_true = getPropertyTrueType(this.containerDeclaration, this.containerType, element_t);
 
                 if(element_t_true.isString() || element_t_true.isNumber()) return modeltypes.PropertyDataTypeKind.ScalarArray;
                     return modeltypes.PropertyDataTypeKind.ComplexArray;
@@ -210,7 +251,11 @@ export class type_property{
         return this.p.getQuestionTokenNode() != undefined;
     }
 
-    constructor(private p: PropertySignature | PropertyDeclaration, private _apiTypeModelCreator: apiTypeModelCreator){}
+    constructor(private containerType: Type,
+                private containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                private p: PropertySignature | PropertyDeclaration,
+                private _apiTypeModelCreator: apiTypeModelCreator){
+    }
 
     // returns constraints filtered to "defaulting"
     // TODO: cache all types of get*Constraints()

@@ -30,6 +30,17 @@ export class showStoreAction extends CommandLineAction {
         console.log(`${prefix} Api Model: ${model.Name}`);
     }
 
+    private printApiTypeModel(prefix: string, model:adlruntime.ApiTypeModel): void{
+        // properties
+        for(const prop  of model.Properties){
+            if(!prop.isRemoved){
+                console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
+             }
+             if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex){
+                    this.printApiTypeModel(prefix + " ", prop.ComplexDataType)
+             }
+        }
+    }
     private printNormalizedTypes(scope:string, normalizedTypes: Iterable<adlruntime.NormalizedApiTypeModel>): void{
         if(scope != "all" && scope != "normalized") return;
         var prefix = "";
@@ -45,14 +56,10 @@ export class showStoreAction extends CommandLineAction {
                 constraintsAsText = "> " + constraintsAsText;
             }
             console.log(`${prefix} + Type: ${normalizedType.Name} ${constraintsAsText}`);
-            // properties
-            for(const prop  of normalizedType.Properties){
-                prefix = "    ";
-                if(!prop.isRemoved){
-                    console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
-                }
-            }
-        }
+            prefix = "    ";
+            this.printApiTypeModel(prefix, normalizedType);
+
+       }
     }
 
     private printApiVersions(scope: string, apiVersions: Iterable<adlruntime.ApiVersionModel>):void{
@@ -82,13 +89,9 @@ export class showStoreAction extends CommandLineAction {
                 constraintsAsText = "> " + constraintsAsText;
             }
 
-            console.log(`${prefix} Type:${versionedType.Name} ${constraintsAsText}`)
-            // properties
-            for(const prop  of versionedType.Properties){
-                prefix = "     ";
-                if(!prop.isRemoved)
-                    console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
-            }
+            console.log(`${prefix} Type:${versionedType.Name} ${constraintsAsText}`);
+            prefix = "     ";
+            this.printApiTypeModel(prefix, versionedType);
         }
     }
 

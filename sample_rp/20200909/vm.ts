@@ -16,7 +16,7 @@ import * as adltypes from '@azure-tools/adl.types'
 import * as armtypes from '@azure-tools/arm.adl'
 
 
-export interface VirtualMachine{
+export interface VirtualMachineProps{
     vmId : string;
     hardwareProfile: HWProfile;
     storageProfile: ImageReference;
@@ -40,3 +40,5 @@ export interface DataDisk {
     diskId: armtypes.ArmResourceId;
 }
 
+// for this resource we want to envelop it in ARM. so we are doing this:
+export type VirtualMachine20200909 = armtypes.ArmVersionedResource<VirtualMachineProps>;

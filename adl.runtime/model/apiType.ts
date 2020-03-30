@@ -85,18 +85,20 @@ export class api_type implements modeltypes.ApiTypeModel{
         // set the name
         this._name = helpers.EscapedName(this._t)
     // set the property
-        const loaded = this.addPropertiesFor(options, errors, this._t);
+        const loaded = this.addPropertiesFor(options, errors, this._t, this._t.getSymbolOrThrow().getDeclaredType());
         return loaded;
     }
 
-    protected addPropertiesFor(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList,t: Type): boolean{
+    // usedT is how it used for example something<props>
+    // t is how it is declared
+    protected addPropertiesFor(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList, containerType: Type, t: Type): boolean{
         // process base types first
         const baseTypes = t.getBaseTypes();
         if(baseTypes.length > 0){
             // add properties from base classes
             let result = true;
             for(let base of baseTypes){
-                const r = this.addPropertiesFor(options, errors, base);
+                const r = this.addPropertiesFor(options, errors, base, base.getSymbolOrThrow().getDeclaredType());
                 if(!r) return r;
             }
         }
@@ -127,7 +129,7 @@ export class api_type implements modeltypes.ApiTypeModel{
         for(let p of props)
         {
             // add property object for each
-            const prop = new type_property(p, createApiTypeModel);
+            const prop = new type_property(containerType, decl, p, createApiTypeModel);
             const loaded = prop.load(options, errors);
             if (!loaded) {
                 const message = `failed to load property ${p.getText()}, check errors`;
@@ -183,12 +185,22 @@ export class normalized_type extends api_type implements modeltypes.NormalizedAp
             return false;
         }
 
-        const props = ta[1];
-            if( !props.isInterface() && !props.isClass()){
-                const message = ` unable to identify properties type for NormalizedApiType ${props.getText()} allowed property types are class and interface`;
-                options.logger.err(message);
-                errors.push(helpers.createLoadError(message));
-                return false;
+        // always load the symbols of the type not the type
+
+        const s = ta[1].getSymbol();
+        if(!s){
+            const message = ` unable to identify properties type for NormalizedApiType ${ta[1].getText()} failed to get   symbol`;
+            options.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return false;
+        }
+        const props = s.getDeclaredType();
+
+        if( !props.isInterface() && !props.isClass()){
+            const message = ` unable to identify properties type for NormalizedApiType ${props.getText()} allowed property types are class and interface`;
+            options.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return false;
         }
 /* TODO
         // normalizers needs to be a class
@@ -207,7 +219,7 @@ export class normalized_type extends api_type implements modeltypes.NormalizedAp
         this._name = helpers.quotelessString(name_ta.getText());
 
         // add properties
-        return this.addPropertiesFor(options, errors, props);
+        return this.addPropertiesFor(options, errors, ta[1]/* container type*/, props /*container declaration*/);
     }
 }
 
@@ -267,8 +279,16 @@ export class versioned_type extends api_type implements modeltypes.VersionedApiT
 
         // set name
         this._name =  helpers.quotelessString(ta[1].getText());
+        
+        const s = ta[3].getSymbol();
+        if(!s){
+            const message = `unable to identify properties type for VersionedApiType ${ta[3].getText()} failed to get symbol`;
+            options.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return false;
+        }
 
-        const typeProps =ta[3];
+        const typeProps = s.getDeclaredType();
         if( !typeProps.isInterface() && !typeProps.isClass() /* && !TypeGuards.isIntersectionTypeNode(typeProps) -- no love for intersection or union*/){
                 const message =`unable to identify properties type for ${this.Name} allowed Kinds are: Interface or Interface`;
                 options.logger.err(message);
@@ -284,6 +304,6 @@ export class versioned_type extends api_type implements modeltypes.VersionedApiT
         }
 
         // add properties
-        return this.addPropertiesFor(options, errors, typeProps);
+        return this.addPropertiesFor(options, errors, ta[3] /* container type*/, typeProps /*container declaration*/);
     }
 }

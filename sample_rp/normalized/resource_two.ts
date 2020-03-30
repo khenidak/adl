@@ -3,7 +3,7 @@
  */
 
 import * as adltypes from '@azure-tools/adl.types'
-
+import * as armtypes from '@azure-tools/arm.adl'
 // I need a custom validator and a defaulter for my fancy resource
 // notice here we are using classes, in vm we used interfaces
 // both are ok
@@ -17,7 +17,7 @@ export class ResourceTwoProps{
 }
 
 
-export class ResourceTwoPropsNormalizer extends adltypes.AutoNormalizer<ResourceTwoProps>{
+class ResourceTwoPropsNormalizer implements adltypes.Normalizer<ResourceTwoProps>{
     // *** THE BELOW IS AN EXAMPLE OF CUSTOM VALIDATOR AND DEFAULTER. THIS IS NOT THE NORMAL
     // *** APIS DESIGNER WILL NEED TO DO THAT ONLY IF THEY NEED CUSTOM BEHAVIOR. IN OTHER
     // *** WORDS IF THE ANNOTATIONS (INTERSECTIONS) ARE NOT PROVIDING THE BEHAVIOR NEEDED.
@@ -46,3 +46,7 @@ export class ResourceTwoPropsNormalizer extends adltypes.AutoNormalizer<Resource
         }
     }
 }
+//wrap the properties in envelop
+export type ResourceTwoNormalized  = armtypes.ArmNormalizedResource<ResourceTwoProps>;
+// wrap the normalizer
+export type RespourceTwoNormalizer = armtypes.ArmnNormalizer<ResourceTwoProps, ResourceTwoPropsNormalizer>;

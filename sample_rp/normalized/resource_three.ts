@@ -17,9 +17,9 @@ import * as adltypes from '@azure-tools/adl.types'
 // or possible values or a string.. not traditional enum
 export interface ResourceThreeProps{
     someProp1: number &
-                         adltypes.DefaultValue<15>;
+               adltypes.DefaultValue<15>;
     someProp2: string;
 
     someProp3: string &
-                         adltypes.OneOf<['v1', 'v2', 'v3']>
+               adltypes.OneOf<['v1', 'v2', 'v3']>
 }

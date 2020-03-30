@@ -23,11 +23,11 @@ type Version<low, high = any> = any;
 // TODO: Create a dictionary that has
 // validation for keys and values
 /** an dictionary of key(string)/value pairs */
-
+/*
 export interface Dictionary<T> {
   [key: string]: T;
 }
-
+*/
 /* non primitive types
  * these are the types that require scalar+validation
  * eg uri uuid both require a specialized form of a string

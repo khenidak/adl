@@ -1,20 +1,28 @@
 {
-    "dataDisks": [
-        {
-            "diskId": "diskid-here"
-        }
-    ],
-    "hardwareProfile": {
-        "virtualMachineSize": "StandardDS_v3"
+    "etag": "",
+    "id": "",
+    "location": "",
+    "name": "",
+    "properties": {
+        "dataDisks": [
+            {
+                "diskId": "diskid-here"
+            }
+        ],
+        "hardwareProfile": {
+            "virtualMachineSize": "StandardDS_v3"
+        },
+        "storageProfile": {
+            "offer": "offer field value",
+            "publisher": "publisher field value",
+            "sku": "sku field value",
+            "version": "version field value"
+        },
+        "totalCores": 100,
+        "v1Prop": 9,
+        "v2Prop": "defaulted  declartively",
+        "vmId": "string-here"
     },
-    "storageProfile": {
-        "offer": "offer-here",
-        "publisher": "publisher-here",
-        "sku": "sku-here",
-        "version": "version-here"
-    },
-    "totalCores": 96,
-    "v1Prop": 9,
-    "v2Prop": "set by declartive annotation",
-    "vmId": "string-here"
+    "resourceGroup": "my resource group",
+    "type": "virtualmachine"
 }

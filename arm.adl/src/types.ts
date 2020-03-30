@@ -19,7 +19,6 @@ export class ArmNormalizedResource<props extends adltypes.Normalized>{
     resourceGroup: ResourceGroup;
     location: Location;
     type: ResourceType;
-//TODO
 //  tags?: adltypes.Dictionary<string>;
     etag?: string;
     properties: props;
@@ -52,16 +51,16 @@ export class ArmVersionedResource<versionedProps extends adltypes.Versioned>
     resourceGroup: ResourceGroup;
     location: Location;
     type: ResourceType;
-//TODO
-  //tags?: adltypes.Dictionary<string>;
+	//TODO
+  	//tags?: adltypes.Dictionary<string>;
     etag?: string;
     properties: versionedProps;
 
 }
 
-class ArmVersioner<normalizedProps extends adltypes.Normalized,
-                                    versionedProps extends adltypes.Versioned,
-                                    versioner extends adltypes.Versioner<normalizedProps, versionedProps>>
+export class ArmVersioner<normalizedProps extends adltypes.Normalized,
+                          versionedProps extends adltypes.Versioned,
+                          versioner extends adltypes.Versioner<normalizedProps, versionedProps>>
                                     implements adltypes.Versioner<ArmNormalizedResource<normalizedProps>, ArmNormalizedResource<versionedProps>>{
     // normalize performs conversion from versioned api type => normalized api type
     Normalize(versioned: ArmVersionedResource<versionedProps>, normalized: ArmNormalizedResource<normalizedProps>, errors: adltypes.errorList) : void{
