@@ -15,8 +15,8 @@ export class appContext {
         // endpoint to load the data.
         this.opts = new adlruntime.apiProcessingOptions();
         await this.store.addApi(this.opts,
-                                                            "sample_rp",
-                                                            "/home/khenidak/go/src/github.com/khenidak/adl/sample_rp" );
+                                "sample_rp",
+                                "/home/khenidak/go/src/github.com/khenidak/adl/sample_rp" );
 
 
         this.machineryRuntime = this.machinery.createRuntime(this.store, this.opts);

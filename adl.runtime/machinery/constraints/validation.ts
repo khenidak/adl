@@ -12,7 +12,8 @@ export class MaximumImpl implements machinerytypes.ValidationConstraintImpl{
         existingRootTyped: any | undefined,
         existingLeveledTyped: any | undefined,
         rootApiTypeModel: modeltypes.ApiTypeModel,
-        leveledApiTypeModel: modeltypes.ApiTypeModel):boolean{
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
 
             const val = leveledTyped[context.propertyName] as number;
             const max = context.ConstraintArgs[0] as number;
@@ -33,7 +34,8 @@ export class MinimumImpl implements machinerytypes.ValidationConstraintImpl{
         existingRootTyped: any | undefined,
         existingLeveledTyped: any | undefined,
         rootApiTypeModel: modeltypes.ApiTypeModel,
-        leveledApiTypeModel: modeltypes.ApiTypeModel) :boolean{
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
 
             const val = leveledTyped[context.propertyName] as number;
             const min = context.ConstraintArgs[0] as number;
@@ -54,7 +56,8 @@ export class RangeImpl implements machinerytypes.ValidationConstraintImpl{
         existingRootTyped: any | undefined,
         existingLeveledTyped: any | undefined,
         rootApiTypeModel: modeltypes.ApiTypeModel,
-        leveledApiTypeModel: modeltypes.ApiTypeModel): boolean{
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
             const maxName   = "Maximum";
             const minName = "Minimum";
             const maxImpl = context.machinery.getValidationConstraintImplementation(maxName);
@@ -71,8 +74,8 @@ export class RangeImpl implements machinerytypes.ValidationConstraintImpl{
             clonedMin.errors = new adltypes.errorList(); // we do our own errors
 
 
-            const maxValidationFailed = maxImpl.Run(clonedMax, rootTyped, leveledTyped, existingRootTyped, existingLeveledTyped, rootApiTypeModel, leveledApiTypeModel);
-            const minValidationFailed = maxValidationFailed && minImpl.Run(clonedMin, rootTyped, leveledTyped, existingRootTyped, existingLeveledTyped, rootApiTypeModel, leveledApiTypeModel);
+            const maxValidationFailed = maxImpl.Run(clonedMax, rootTyped, leveledTyped, existingRootTyped, existingLeveledTyped, rootApiTypeModel, leveledApiTypeModel, isMapKey);
+            const minValidationFailed = maxValidationFailed && minImpl.Run(clonedMin, rootTyped, leveledTyped, existingRootTyped, existingLeveledTyped, rootApiTypeModel, leveledApiTypeModel, isMapKey);
 
             if(!maxValidationFailed || !minValidationFailed){
                 context.errors.push(machinerytypes.createValidationError(`value ${leveledTyped[context.propertyName]} is out of range expected value between ${context.ConstraintArgs[0]} - ${context.ConstraintArgs[1]}`, context.fieldPath));

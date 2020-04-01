@@ -33,8 +33,11 @@ export function quotelessString(inString: string): string{
 }
 
 export function EscapedName(tt:Type): string{
-    const s = tt.compilerType.symbol.escapedName.toString();
-    return s;
+    const s = tt.getSymbol();
+    if(s) return s.getName();
+
+    // has no symbol (premitive type)
+    return tt.getText();
 }
 
 // helper used for model load errors

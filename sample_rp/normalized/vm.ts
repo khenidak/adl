@@ -18,6 +18,8 @@ interface VirtualMachineProps{
 
     v2Prop?: string &
              adltypes.DefaultValue<'defaulted  declartively'>;
+
+    networkCards?: adltypes.AdlMap<string, NetworkCard>;
 }
 
 interface ImageReference{
@@ -43,5 +45,9 @@ interface HWProfile {
                         adltypes.DefaultValue<'ds_v2'>;
 }
 
+interface NetworkCard{
+    networkCardId: armtypes.ArmResourceId;
+    networkName?: string & adltypes.DefaultValue<'my_net_name'>;
+}
 // we have defined this resource, but we want arm core properties, so we envelop it
 export type VirtualMachineNormalized = armtypes.ArmNormalizedResource<VirtualMachineProps>;

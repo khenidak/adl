@@ -63,6 +63,15 @@ function getPropertyTrueType(containerDeclaration:ClassDeclaration | InterfaceDe
     return actual;
 }
 
+function getTrueType(tt: Type): Type{
+    if(tt.isIntersection()){ // drill deeper
+        const typer = new helpers.typerEx(tt);
+        const nonConstraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, false);
+        return getTrueType(nonConstraintTypes[0]);
+    }
+
+    return tt;
+}
 
 // represents a constraint
 class property_constraint implements modeltypes.ConstraintModel{
@@ -83,6 +92,9 @@ export class type_property{
     private _dataType_trueType: Type | undefined; // cached true type of property (after unpacking constraints, type aliases, intersections.)
     private _complexType: modeltypes.ApiTypeModel // cached complex type if DataTypeKind == Complex || ArrayComplex
 
+    // if it is complex type then  PropertyDataType_TrueType = type of complex type
+    // if it is array then true data type will point to type of array element
+    // Map is treated as special case, and should be merged in the same logic (TODO)
     private get PropertyDataType_TrueType(): Type{
         if(this._dataType_trueType != undefined) return this._dataType_trueType;
         const nonConstraintsTypes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
@@ -94,10 +106,31 @@ export class type_property{
     }
 
     private isValidPropertyDataType():boolean{
-        const true_t = this.PropertyDataType_TrueType;
+        let true_t:Type;
+        const declared_t = this.PropertyDataType_TrueType;
+        const s = this.PropertyDataType_TrueType.getSymbol();
+
+        if(s != undefined)
+            true_t = s.getDeclaredType();
+        else
+            true_t =this.PropertyDataType_TrueType;
+
 
         // TODO check typescript built in map, set, array types.. all are unallowed
-        if(true_t.isString() || true_t.isNumber() || true_t.isClassOrInterface() || true_t.isIntersection()) return true;
+        if(true_t.isString() || true_t.isNumber()) return true;
+        if(true_t.isClassOrInterface() || true_t.isIntersection()){
+            // regular class or interface
+            if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME) return true;
+
+            // map key and value validation
+            // key validation
+            const typeArgs = declared_t.getTypeArguments();
+            if(typeArgs[0].isString() || typeArgs[0].isNumber()) return true;
+            // value validation
+            if(typeArgs[1].isString() || typeArgs[1].isNumber() || typeArgs[1].isClass() || typeArgs[0].isInterface) return true;
+            // if all failed
+            return false;
+        }
 
         if(true_t.isArray()){
             const element_t = true_t.getArrayElementType();
@@ -107,12 +140,29 @@ export class type_property{
 
             return true;
         }
-
         return false;
     }
 
     get Name(): string{
         return this.p.getName();
+    }
+
+    get MapKeyDataTypeName(): string{
+        if(!this.isMap())
+            throw new Error(`property ${this.Name} is not a map`);
+
+        const true_t = this.PropertyDataType_TrueType;
+        const typeArgs = true_t.getTypeArguments();
+        return helpers.EscapedName(getTrueType(typeArgs[0]));
+    }
+
+    get MapValueDataTypeName(): string{
+        if(!this.isMap())
+            throw new Error(`property ${this.Name} is not a map`);
+
+        const true_t = this.PropertyDataType_TrueType;
+        const typeArgs = true_t.getTypeArguments();
+        return helpers.EscapedName(getTrueType(typeArgs[1]));
     }
 
     get DataTypeName():string{
@@ -132,6 +182,10 @@ export class type_property{
             else
                 return helpers.EscapedName(element_t_true);
         }
+        if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Map ||
+           this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap) return "Map";
+
+        // its stops here
         throw new Error("unable to get data type name");
     }
 
@@ -161,11 +215,13 @@ export class type_property{
         return c.Arguments[0];
     }
 
-    // only valid for properties that are either `complex` of `array of complex`
+    // only valid for properties that are either `complex` or `array of complex` or `complex map`
     // if model to be serialized this needs to return undefined.
     get ComplexDataType(): modeltypes.ApiTypeModel{
-        if(this.DataTypeKind != modeltypes.PropertyDataTypeKind.Complex && this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexArray)
-                throw new Error("propery ${this.Name} data type is not complex or array of complex");
+        if(this.DataTypeKind != modeltypes.PropertyDataTypeKind.Complex &&
+           this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexArray &&
+           this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexMap)
+                throw new Error(`propery ${this.Name} data type is not complex, array of complex types, or map of complex types`);
 
             return this._complexType;
     }
@@ -188,6 +244,16 @@ export class type_property{
 
                 if(element_t_true.isString() || element_t_true.isNumber()) return modeltypes.PropertyDataTypeKind.ScalarArray;
                     return modeltypes.PropertyDataTypeKind.ComplexArray;
+        }
+
+        // if we are here then we must have a symbol
+        // Maps are treated differently
+        if(helpers.EscapedName(true_t) == adltypes.ADL_MAP_TYPENAME){
+            if(true_t.getTypeArguments()[1].isInterface() || true_t.getTypeArguments()[1].isClass())
+                return modeltypes.PropertyDataTypeKind.ComplexMap;
+
+            // just a regular map
+            return modeltypes.PropertyDataTypeKind.Map;
         }
 
         return modeltypes.PropertyDataTypeKind.Complex
@@ -230,9 +296,7 @@ export class type_property{
         const constraints = new  Array<modeltypes.ConstraintModel>();
         const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, true);
         for(let t of constraintTypes){
-            console.log(t.getText())
             const name = helpers.EscapedName(t);
-            console.log(t.getText())
 
             const args = new Array<any>();
             // get args
@@ -246,6 +310,42 @@ export class type_property{
         return constraints;
     }
 
+    get MapKeyConstraints(): Array<modeltypes.ConstraintModel>{
+        const constraints = new  Array<modeltypes.ConstraintModel>();
+        if(!this.isMap) return constraints;
+
+        const true_t = this.PropertyDataType_TrueType;
+        const typeArgs = true_t.getTypeArguments();
+        const typer = new helpers.typerEx(typeArgs[0]);
+        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
+        for( let t of constraintTypes){
+            const name = helpers.EscapedName(t);
+            const args = new Array<any>();
+             t.getTypeArguments().forEach(arg => args.push(arg.getText()));
+            const c = new property_constraint(name, args);
+            constraints.push(c);
+        }
+
+        return constraints;
+    }
+    get MapValueConstraints(): Array<modeltypes.ConstraintModel>{
+        const constraints = new  Array<modeltypes.ConstraintModel>();
+        if(!this.isMap) return constraints;
+
+        const true_t = this.PropertyDataType_TrueType;
+        const typeArgs = true_t.getTypeArguments();
+        const typer = new helpers.typerEx(typeArgs[1]);
+        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
+        for( let t of constraintTypes){
+            const name = helpers.EscapedName(t);
+            const args = new Array<any>();
+             t.getTypeArguments().forEach(arg => args.push(arg.getText()));
+            const c = new property_constraint(name, args);
+            constraints.push(c);
+        }
+
+        return constraints;
+    }
 
     get isOptional(): boolean{
         return this.p.getQuestionTokenNode() != undefined;
@@ -318,6 +418,11 @@ export class type_property{
         return this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray ||
                                     this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray;
     }
+    isMap(): boolean{
+          return this.DataTypeKind == modeltypes.PropertyDataTypeKind.Map ||
+                                    this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap;
+
+    }
 
     hasConstraint(constraintName:string): boolean{
         const constraints = this.Constraints;
@@ -379,18 +484,33 @@ export class type_property{
         }
 
         // is data type is a complex type..  something that we can cache? if so let us cache it
-        if(this.DataTypeKind != modeltypes.PropertyDataTypeKind.Complex && this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexArray)
-                    return true;
+        const shouldProcessComplexType = this.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex ||
+                                         this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray ||
+                                         this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap;
+        if(!shouldProcessComplexType) return true;
 
-        const true_t = this.PropertyDataType_TrueType;
-        // go for either the type or the type of array element
-        const apiTypeModel =
-            this._apiTypeModelCreator(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex ? true_t : true_t.getArrayElementType() as Type);
-
+        let target_type:Type;
+        switch(this.DataTypeKind){
+            case modeltypes.PropertyDataTypeKind.ComplexArray:{
+                target_type = this.PropertyDataType_TrueType.getArrayElementType() as Type;
+                break;
+            }
+            case modeltypes.PropertyDataTypeKind.ComplexMap:{
+                const typeArgs = this.PropertyDataType_TrueType.getTypeArguments();
+                target_type = getTrueType(typeArgs[1]);
+                break;
+            }
+            default:{ /*must be a complex type*/
+                target_type = this.PropertyDataType_TrueType;
+                break;
+            }
+        }
+        const apiTypeModel = this._apiTypeModelCreator(target_type);
         const loaded = apiTypeModel.load(options, errors);
         if(loaded)
             this._complexType = apiTypeModel;
 
         return loaded;
+        // must be a complex map
     }
 }

@@ -4,13 +4,19 @@
     "location": "",
     "name": "",
     "properties": {
+        "coreCount": 100,
         "dataDisks": [
             {
                 "diskId": "diskid-here"
             }
         ],
         "hardwareProfile": {
-            "virtualMachineSize": "StandardDS_v3"
+            "vmSize": "StandardDS_v3"
+        },
+        "networkCards": {
+            "third": {
+                "networkCardId": "network-card-id"
+            }
         },
         "storageProfile": {
             "offer": "offer field value",
@@ -18,11 +24,13 @@
             "sku": "sku field value",
             "version": "version field value"
         },
-        "totalCores": 100,
         "v1Prop": 9,
-        "v2Prop": "defaulted  declartively",
         "vmId": "string-here"
     },
     "resourceGroup": "my resource group",
+    "tags": {
+        "key1": "val1",
+        "key2": "val2"
+    },
     "type": "virtualmachine"
 }

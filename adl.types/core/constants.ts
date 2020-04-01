@@ -24,3 +24,6 @@ export const VERSIONED_TYPE_DEF_SUPER_NAME:string = "CustomApiType";
 
 export const CONSTRAINT_NAME_MODULENAME:string = "ModuleName";
 export const CONSTRAINT_NAME_APIVERSIONNAME = "ApiVersion";
+
+export const ADL_MAP_TYPENAME = "AdlMap";
+

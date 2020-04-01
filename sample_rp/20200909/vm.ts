@@ -23,6 +23,8 @@ export interface VirtualMachineProps{
     dataDisks: DataDisk[];
     v1Prop: number;
     coreCount: number & adltypes.MapTo<'totalCores'>;
+    networkCards?: adltypes.AdlMap<string, NetworkCard>;
+
 }
 
 export interface HWProfile {
@@ -38,6 +40,9 @@ export interface ImageReference{
 
 export interface DataDisk {
     diskId: armtypes.ArmResourceId;
+}
+interface NetworkCard{
+    networkCardId: armtypes.ArmResourceId;
 }
 
 // for this resource we want to envelop it in ARM. so we are doing this:

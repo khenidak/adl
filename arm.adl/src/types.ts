@@ -19,7 +19,7 @@ export class ArmNormalizedResource<props extends adltypes.Normalized>{
     resourceGroup: ResourceGroup;
     location: Location;
     type: ResourceType;
-//  tags?: adltypes.Dictionary<string>;
+    tags?: adltypes.AdlMap<string & adltypes.MinLength<256>, string & adltypes.MaxLength<256>>;
     etag?: string;
     properties: props;
 }
@@ -51,8 +51,7 @@ export class ArmVersionedResource<versionedProps extends adltypes.Versioned>
     resourceGroup: ResourceGroup;
     location: Location;
     type: ResourceType;
-	//TODO
-  	//tags?: adltypes.Dictionary<string>;
+  	tags?: adltypes.AdlMap<string, string>;
     etag?: string;
     properties: versionedProps;
 

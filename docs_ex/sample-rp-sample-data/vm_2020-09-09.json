@@ -13,6 +13,11 @@
         "hardwareProfile": {
             "vmSize": "StandardDS_v3"
         },
+        "networkCards": {
+            "third": {
+                "networkCardId": "network-card-id"
+            }
+        },
         "storageProfile": {
             "offer": "offer field value",
             "publisher": "publisher field value",
@@ -23,5 +28,9 @@
         "vmId": "string-here"
     },
     "resourceGroup": "my resource group",
+    "tags": {
+        "key1": "val1",
+        "key2": "val2"
+    },
     "type": "virtualmachine"
 }

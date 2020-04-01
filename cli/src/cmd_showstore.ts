@@ -36,9 +36,28 @@ export class showStoreAction extends CommandLineAction {
             if(!prop.isRemoved){
                 console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
              }
-             if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex){
+             if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex ||
+                prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexArray ||
+                prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexMap){
                     this.printApiTypeModel(prefix + " ", prop.ComplexDataType)
              }
+            if(prop.isMap()){
+                let constraintAsText = ""
+                for(const c of prop.MapKeyConstraints){
+                    constraintAsText = constraintAsText + `${c.Name}(` + c.Arguments.join(",") +") | ";
+                }
+
+                if(constraintAsText.length > 0)
+                    console.log(`${prefix} * KeyConstraints: ${constraintAsText}`);
+
+                constraintAsText = ""
+                for(const c of prop.MapValueConstraints){
+                    constraintAsText = constraintAsText + `${c.Name}(` + c.Arguments.join(",") +") | ";
+                }
+                if(constraintAsText.length > 0)
+                    console.log(`${prefix} * ValueConstraints: ${constraintAsText}`);
+
+            }
         }
     }
     private printNormalizedTypes(scope:string, normalizedTypes: Iterable<adlruntime.NormalizedApiTypeModel>): void{

@@ -130,7 +130,8 @@ export interface ValidationConstraintImpl{
         // model for the root api type
         rootApiTypeModel: modeltypes.ApiTypeModel,
         // model for the leveled api type
-        leveledApiTypeModel: modeltypes.ApiTypeModel) :boolean; // valid or not
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey : boolean) :boolean; // valid or not
 }
 
 // --- CONVERSION CONSTRAINT TYPES ---- ////
