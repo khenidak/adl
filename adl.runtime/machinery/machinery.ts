@@ -8,55 +8,40 @@ import * as conformance from './conformance/module'
 import * as constraints from './constraints/module'
 
 
-class machineryLoadableRuntime{
-    get Name(): string{return this._name;}
-    // loaded rules
-    conformanceRules: Map<string, machinerytypes.ConformanceRule<modeltypes.AnyAdlModel>> =
-        new Map<string, machinerytypes.ConformanceRule<modeltypes.AnyAdlModel>>();
-
-    defaultingConstraints: Map<string, machinerytypes.DefaultingConstraintImpl> =
-        new Map<string, machinerytypes.DefaultingConstraintImpl>();
-
-    validationConstraints: Map<string, machinerytypes.ValidationConstraintImpl> =
-        new Map<string, machinerytypes.ValidationConstraintImpl>();
-
-    conversionConstraints: Map<string, machinerytypes.ConversionConstraintImpl> =
-        new Map<string, machinerytypes.ConversionConstraintImpl>();
-    constructor(private _name: string){}
-}
 
 export class apiMachinery implements machinerytypes.Machinery{
-    private _runtimes = new Map<string, machineryLoadableRuntime>();
+    private _runtimes = new Map<string, machinerytypes.machineryLoadableRuntime>();
 
-    private _defaulting_constraints = new Map<string, machinerytypes.DefaultingConstraintImpl>();
-    private _validation_constraints = new Map<string, machinerytypes.ValidationConstraintImpl>();
-    private _conversion_constraints = new Map<string, machinerytypes.ConversionConstraintImpl>();
-    private registerRuntime(r: machineryLoadableRuntime) : void{
+    private _defaulting_implementations = new Map<string, machinerytypes.DefaultingConstraintImpl>();
+    private _validation_implementations = new Map<string, machinerytypes.ValidationConstraintImpl>();
+    private _conversion_implementations = new Map<string, machinerytypes.ConversionConstraintImpl>();
+    private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{
         if(this._runtimes.has(r.Name))
                 throw new Error(`runtime ${r.Name} has been already registered`);
 
-        for(let [k,v] of r.defaultingConstraints){
-            if(this._defaulting_constraints.has(k))
+        for(let [k,v] of r.defaultingImplementations){
+            if(this._defaulting_implementations.has(k))
                 throw new Error(`runtime ${r.Name} registering an already registered defaulting constraint ${k}`);
 
-            this._defaulting_constraints.set(k, v);
+            this._defaulting_implementations.set(k, v);
         }
 
-        for(let [k,v] of r.validationConstraints){
-            if(this._validation_constraints.has(k))
+        for(let [k,v] of r.validationImplementations){
+            if(this._validation_implementations.has(k))
                 throw new Error(`runtime ${r.Name} registering an already registered validation constraint ${k}`);
 
-            this._validation_constraints.set(k, v);
+            this._validation_implementations.set(k, v);
         }
 
-        for(let [k,v] of r.conversionConstraints){
-            if(this._conversion_constraints.has(k))
+        for(let [k,v] of r.conversionImplementations){
+            if(this._conversion_implementations.has(k))
                 throw new Error(`runtime ${r.Name} registering an already registered conversion constraint ${k}`);
 
-            this._conversion_constraints.set(k,v);
+            this._conversion_implementations.set(k,v);
         }
 
         this._runtimes.set(r.Name, r);
+        this.opts.logger.info(`adl machinery registered runtime: ${r.Name}`);
     }
 
     // !!!! IMPORTANT: adl runtime is treated the same way as the rest of the run time.
@@ -64,7 +49,7 @@ export class apiMachinery implements machinerytypes.Machinery{
     // rules needs to be manually added here
     private buildAdlRuntime(){
         // load the runtime
-        const adlcore = new machineryLoadableRuntime(machinerytypes.ADL_RUNTIME_NAME);
+        const adlcore = new machinerytypes.machineryLoadableRuntime(machinerytypes.ADL_RUNTIME_NAME);
 
         // conformance rules
         const rule1 = new conformance.enforceLowerCamelCase();
@@ -72,45 +57,58 @@ export class apiMachinery implements machinerytypes.Machinery{
 
         // all names has to reference the Constraint Types' Names
 
-        const def1 = new constraints.DefaultValueImpl();
-        adlcore.defaultingConstraints.set("DefaultValue", def1);
+        const def1i = new constraints.DefaultValueImpl();
+        adlcore.defaultingImplementations.set("DefaultValue", def1i);
 
-        const val1 = new constraints.MaximumImpl();
-        adlcore.validationConstraints.set("Maximum", val1);
+        const val1i = new constraints.MaximumImpl();
+        adlcore.validationImplementations.set("Maximum", val1i);
 
-        const val2 = new constraints.MinimumImpl();
-        adlcore.validationConstraints.set("Minimum", val2);
+        const val2i = new constraints.MinimumImpl();
+        adlcore.validationImplementations.set("Minimum", val2i);
 
-        const val3 = new constraints.RangeImpl();
-        adlcore.validationConstraints.set("Range", val3);
+        const val3i = new constraints.RangeImpl();
+        adlcore.validationImplementations.set("Range", val3i);
 
-        const conv1 = new constraints.MapToImpl();
-        adlcore.conversionConstraints.set("MapTo", conv1);
+        const conv1i = new constraints.MapToImpl();
+        adlcore.conversionImplementations.set("MapTo", conv1i);
 
         return adlcore;
     }
 
-    constructor(){
+    constructor(private opts: modeltypes.apiProcessingOptions){
             const coreRuntime = this.buildAdlRuntime();
             this.registerRuntime(coreRuntime);
     }
 
+    // loads an external runtime
+    async loadRuntime(runtimePath: string, config:any | undefined, runtimeCreatorTypeName: string = machinerytypes.DEFAULT_RUNTIME_CREATOR_TYPE_NAME):Promise<void>{
+       const loaded = await import(runtimePath);
+       if(loaded[runtimeCreatorTypeName] == undefined) throw new Error(`failed to load runtime from :${runtimePath} can not find runtime creator with the name ${runtimeCreatorTypeName}`);
+
+       const creator = new loaded[runtimeCreatorTypeName]() as machinerytypes.RuntimeCreator;
+
+       if(!machinerytypes.isRuntimeCreator(creator)) throw new Error(`failed to load runtime from :${runtimePath} type ${runtimeCreatorTypeName} is not a runtime creator`);
+
+       const runtimeDef = creator.Create(config);
+       this.registerRuntime(runtimeDef);
+    }
+
     getDefaultingConstraintImplementation(name: string): machinerytypes.DefaultingConstraintImpl{
-        const impl = this._defaulting_constraints.get(name);
+        const impl = this._defaulting_implementations.get(name);
         if(!impl) throw new Error(`defaulting constraint ${name} does not exist`);
 
         return impl;
     }
 
     getValidationConstraintImplementation(name: string): machinerytypes.ValidationConstraintImpl{
-        const impl = this._validation_constraints.get(name);
+        const impl = this._validation_implementations.get(name);
         if(!impl) throw new Error(`validation constraint ${name} does not exist`);
 
         return impl;
     }
 
     getConversionConstraintImplementation(name: string): machinerytypes.ConversionConstraintImpl{
-        const impl = this._conversion_constraints.get(name);
+        const impl = this._conversion_implementations.get(name);
         if(!impl) throw new Error(`conversion constraint ${name} does not exist`);
 
         return impl;
@@ -173,7 +171,7 @@ export class apiMachinery implements machinerytypes.Machinery{
     }
 
     // create runtime for an entire store
-    createRuntime(store: modeltypes.ApiManager, options: modeltypes.apiProcessingOptions): machinerytypes.ApiRuntime{
-        return new runtime.apiRuntime(store,this, options);
+    createRuntime(store: modeltypes.ApiManager): machinerytypes.ApiRuntime{
+        return new runtime.apiRuntime(store,this, this.opts);
     }
 }

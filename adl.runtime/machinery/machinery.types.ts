@@ -1,7 +1,37 @@
 import * as adltypes from '@azure-tools/adl.types'
 import * as modeltypes from '../model/module'
 
-export const ADL_RUNTIME_NAME = "adlruntime";
+export const ADL_RUNTIME_NAME = "adl-core-runtime";
+// default name for runtime creator name
+export const DEFAULT_RUNTIME_CREATOR_TYPE_NAME = "RuntimeCreator";
+// loadable runtime types
+
+// represents a loadable runtime
+export class machineryLoadableRuntime{
+    get Name(): string{return this._name;}
+    // confomrance rules
+    readonly conformanceRules: Map<string, ConformanceRule<modeltypes.AnyAdlModel>> = new Map<string, ConformanceRule<modeltypes.AnyAdlModel>>();
+
+    //  defaulting constraints implementations
+    readonly defaultingImplementations: Map<string, DefaultingConstraintImpl> = new Map<string, DefaultingConstraintImpl>();
+
+    // validation constraints implementation
+    readonly validationImplementations: Map<string, ValidationConstraintImpl> = new Map<string, ValidationConstraintImpl>();
+
+    // concersion constraints implementation
+    readonly conversionImplementations: Map<string, ConversionConstraintImpl> = new Map<string, ConversionConstraintImpl>();
+    constructor(private _name: string){}
+}
+
+export interface RuntimeCreator{
+    Create(config:any|undefined): machineryLoadableRuntime;
+}
+
+//typeguard
+export function isRuntimeCreator(sometype: any): sometype is RuntimeCreator{
+    return(sometype as RuntimeCreator).Create != undefined;
+}
+
 
 // --- CONFORMANCE TYPES ---- //
 /* conformance engine types */
