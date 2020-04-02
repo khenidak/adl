@@ -430,6 +430,14 @@ export class type_property{
     }
 
     load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
+          createPropertyDataType(this.containerType,
+                                this.containerDeclaration,
+                                this.p,
+                                this._apiTypeModelCreator,
+                                options,
+                                errors);
+
+
         const typeNode = this.p.getTypeNode();
         if(!typeNode){
             const message = `property ${this.Name} failed to load, failed to get TypeNode`;
@@ -513,4 +521,196 @@ export class type_property{
         return loaded;
         // must be a complex map
     }
+}
+
+// base class for all property data types
+class propertyDataType{
+    // results to all compiler api calls are cached here
+    protected _cache: Map<string, any> = new Map<string, any>();
+
+    constructor(private typer: helpers.typerEx,
+                private appeared_t: Type, /* true type of appear_t */
+                private containerType: Type,
+                private containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                private p: PropertySignature | PropertyDeclaration,
+                private _apiTypeModelCreator: apiTypeModelCreator,
+                private opts: modeltypes.apiProcessingOptions){
+
+    }
+}
+
+function createPropertyDataType(containerType: Type,
+                                containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                                p: PropertySignature | PropertyDeclaration,
+                                _apiTypeModelCreator: apiTypeModelCreator,
+                                opts:modeltypes.apiProcessingOptions,
+                                errors: adltypes.errorList): modeltypes.AnyAdlPropertyDataTypeModel | undefined{
+
+    const typeNode = p.getTypeNode();
+    if(!typeNode){
+        const message = `property ${p.getName()} failed to load, failed to get TypeNode`;
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+    }
+
+    const typer = new helpers.typerEx(typeNode.getType());
+
+     // validation logic
+     // weather or not the property defined as an intersection, we need to make
+     // sure that only ONE type is the data type, the rest are constraints
+     // fancy_property: string & Required (OK)
+     // fancy_property: string & int & Required (NOT OK: data type is intersecting)
+     // fancy_property: Required & MustMatch<..> (NOT OK: there is no data type)
+     // TODO check for union types
+     const nonConstraintsTypeNodes = typer.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
+     if(nonConstraintsTypeNodes.length != 1){
+     // let us assume that it was not defined
+     let message = `invalid data type for property ${p.getName()}. must have a data type defined`;
+
+     if(nonConstraintsTypeNodes.length == 1)
+        message = `invalid data type for property ${p.getName()}. must have a single data type`;
+
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+     }
+
+     // must have max of one adl.DataType
+     const dataTypes = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
+     if(dataTypes.length > 1){
+        const message = `invalid data type for property ${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+     }
+
+     // must have max of one OneOf(enum);
+     const enumConstraints = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
+     if(dataTypes.length > 1){
+        const message = `invalid data type for property ${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+     }
+
+
+     // data type validation and selection
+     const t      = nonConstraintsTypeNodes[0]; // this the Type that represents the non constraint
+     //appeared_t is what appars in property definition
+     const appeared_t = getPropertyTrueType(containerDeclaration, containerType, t);
+     // true_t points to declaration if it has any
+     let true_t = appeared_t; // both are the same initially
+
+     //declartion is from the compiler sympol
+     const s = appeared_t.getSymbol();
+     // if type has declartion then declared_t will point to it
+     if(s != undefined) true_t = s.getDeclaredType();
+
+    // container type must have a symbol since it is contains a property
+    const nameOfContainer = containerType.getSymbolOrThrow().getName();
+
+    if(true_t.isString() || true_t.isNumber() || true_t.isBoolean()) {
+        // TODO load scalar datatypemodel
+        opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a scalar`);
+        return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+    };
+
+    if(true_t.isClassOrInterface() || true_t.isIntersection()){
+        const dataTypeName = true_t.getSymbolOrThrow().getName();
+        if(dataTypeName == "Map" || dataTypeName == "Set"){ /*array<T> appearts to behave exactly like an array from compiler prespective */
+            const message = `property ${p.getName()} of ${nameOfContainer} is invalid. maps, and sets are not allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+        if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME){
+            // TODO: load complex data type
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a complex data type`);
+            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        }
+
+        // map key and value validation
+        // key validation
+        const typeArgs = appeared_t.getTypeArguments();
+        const key_true_t = getTrueType(typeArgs[0]);
+        const val_true_t = getTrueType(typeArgs[1]);
+        if(!key_true_t.isString() &&  key_true_t.isNumber()){
+            const message = `invalid key data type for map ${p.getName()} only string or number is allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // value validation
+        if(val_true_t.isString() && !val_true_t.isNumber() && !val_true_t.isBoolean && !val_true_t.isClassOrInterface() && !val_true_t.isIntersection()){
+            const message = `invalid value type for map ${p.getName()} only (string, number, boolean, class, interface, intersection is allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // identify if it is a complex map
+        if(val_true_t.isClassOrInterface()){
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex map`);
+            //TODO LOAD complex map
+            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        }else{
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as  map`);
+            //TODO LOAD complex map
+            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        }
+    }
+
+    if(true_t.isArray()){
+        const appeared_t = true_t.getArrayElementType();
+        if(!appeared_t){
+            const message = `unable to identify data type array element for property ${p.getName()} of ${nameOfContainer}`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+        const element_t = getTrueType(appeared_t);
+        // arrays of any are not allowed
+        if(!element_t.isAny()){
+            const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, any is not allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // array of arrays are not allowed
+        if(!element_t.isArray()){
+            const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, array of arrays is not allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // basic type is cool
+        if(element_t.isString() && element_t.isNumber() && element_t.isBoolean()){
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple array`);
+            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        }
+
+
+        if(element_t.isClassOrInterface() || element_t.isIntersection()){
+            const dataTypeName = element_t.getSymbolOrThrow().getName();
+            // map, sets, arrays, adlmaps are not allowed
+            if(dataTypeName == "Map" || dataTypeName == "Set" || dataTypeName == "Array" || dataTypeName == adltypes.ADL_MAP_TYPENAME){
+                const message = `element data type for array ${p.getName()} of ${nameOfContainer} is invalid. maps, sets, arrays, adl maps are not allowed`
+                opts.logger.err(message);
+                errors.push(helpers.createLoadError(message));
+                return undefined;
+            }
+
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex array`);
+            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        }
+    }
+
+    const message = `unable to identify data type property ${p.getName()} of ${nameOfContainer}`
+    opts.logger.err(message);
+    errors.push(helpers.createLoadError(message));
+    return undefined;
 }
