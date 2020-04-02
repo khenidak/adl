@@ -15,6 +15,9 @@ export class apiMachinery implements machinerytypes.Machinery{
     private _defaulting_implementations = new Map<string, machinerytypes.DefaultingConstraintImpl>();
     private _validation_implementations = new Map<string, machinerytypes.ValidationConstraintImpl>();
     private _conversion_implementations = new Map<string, machinerytypes.ConversionConstraintImpl>();
+    
+    private _generators = new Map<string, machinerytypes.Generator>();
+
     private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{
         if(this._runtimes.has(r.Name))
                 throw new Error(`runtime ${r.Name} has been already registered`);
@@ -39,6 +42,14 @@ export class apiMachinery implements machinerytypes.Machinery{
 
             this._conversion_implementations.set(k,v);
         }
+
+        for(let [k,v] of r.generators){
+            if(this._generators.has(k))
+                throw new Error(`runtime ${r.Name} registering an already registered generator ${k}`);
+
+            this._generators.set(k,v);
+        }
+
 
         this._runtimes.set(r.Name, r);
         this.opts.logger.info(`adl machinery registered runtime: ${r.Name}`);
@@ -168,6 +179,23 @@ export class apiMachinery implements machinerytypes.Machinery{
 
         // convert errors;
         return errs;
+    }
+
+    // generators
+    getGenerators(): Map<string, machinerytypes.Generator>{
+        return this._generators;
+    }
+
+    hasGenerator(name: string): boolean{
+       return this._generators.has(name);
+    }
+
+    runGeneratorFor(apiManager: modeltypes.ApiManager, name:string, config: any | undefined):void{
+        if(!this.hasGenerator(name)) throw new Error(`generator ${name} does not exist`);
+
+        const generator = this._generators.get(name) as machinerytypes.Generator;
+
+        generator.generate(apiManager, this.opts, config);
     }
 
     // create runtime for an entire store

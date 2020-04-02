@@ -12,6 +12,9 @@ export class machineryLoadableRuntime{
     // confomrance rules
     readonly conformanceRules: Map<string, ConformanceRule<modeltypes.AnyAdlModel>> = new Map<string, ConformanceRule<modeltypes.AnyAdlModel>>();
 
+    // generators
+    readonly generators: Map<string, Generator> = new Map<string, Generator>();
+
     //  defaulting constraints implementations
     readonly defaultingImplementations: Map<string, DefaultingConstraintImpl> = new Map<string, DefaultingConstraintImpl>();
 
@@ -24,6 +27,8 @@ export class machineryLoadableRuntime{
 }
 
 export interface RuntimeCreator{
+    // creates loadable runtime definition. A loadable runtime can have any or none
+    // of implementations, constraints, generators etc..
     Create(config:any|undefined): machineryLoadableRuntime;
 }
 
@@ -32,6 +37,14 @@ export function isRuntimeCreator(sometype: any): sometype is RuntimeCreator{
     return(sometype as RuntimeCreator).Create != undefined;
 }
 
+
+// -- Generator types --- //
+// a generator generates anything. such as swagger .net types golang types
+// generators can be provided as part of runtime or build in in adl
+export interface Generator{
+    readonly description: string; // description of what this thing can do
+    generate(apiManager:modeltypes.ApiManager, opts: modeltypes.apiProcessingOptions, config: any|undefined): void;
+}
 
 // --- CONFORMANCE TYPES ---- //
 /* conformance engine types */

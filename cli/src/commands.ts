@@ -5,6 +5,8 @@ import { showStoreAction } from './cmd_showstore'
 import { verifyConformanceAction } from './cmd_verifyconformance'
 import { machineryAction } from './cmd_machinery'
 import { diffAction } from './cmd_diff'
+import { machinery_generator_Action } from './cmd_machinery_generators'
+
 import { appContext } from './appContext'
 
 import * as adlruntime from '@azure-tools/adl.runtime'
@@ -23,11 +25,12 @@ export class adlCliParser extends CommandLineParser {
       toolDescription: ''
     });
 
-            //  pass context down the line
-            this.addAction(new showStoreAction(ctx));
-            this.addAction(new diffAction(ctx));
-            this.addAction(new verifyConformanceAction(ctx));
-            this.addAction(new machineryAction(ctx));
+    //  pass context down the line
+    this.addAction(new showStoreAction(ctx));
+    this.addAction(new diffAction(ctx));
+    this.addAction(new verifyConformanceAction(ctx));
+    this.addAction(new machineryAction(ctx));
+    this.addAction(new machinery_generator_Action(ctx));
   }
 
 
