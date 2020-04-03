@@ -476,7 +476,6 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     }
                     for(const key of Object.keys(normalized[propertyName])){
                         const walkField = new adltypes.fieldDesc(key, currentFieldDesc);
-                        console.log(key);
                         if(srcP.DataTypeKind == modeltypes.PropertyDataTypeKind.Map){
                             // should we compare value data type name here?
                             versioned[propertyName][key] = normalized[propertyName][key];
