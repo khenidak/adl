@@ -15,7 +15,7 @@ export class apiMachinery implements machinerytypes.Machinery{
     private _defaulting_implementations = new Map<string, machinerytypes.DefaultingConstraintImpl>();
     private _validation_implementations = new Map<string, machinerytypes.ValidationConstraintImpl>();
     private _conversion_implementations = new Map<string, machinerytypes.ConversionConstraintImpl>();
-    
+
     private _generators = new Map<string, machinerytypes.Generator>();
 
     private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{

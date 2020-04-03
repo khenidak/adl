@@ -26,6 +26,27 @@ export const defaults = {
   }
 };
 
+// compiler expands boolean types to true & x | false & x
+// if the type is an intersection. this is a helper function that works around that
+// !!!! as we introduce union types, we need to revisit this
+export function isBoolean(t: Type):boolean{
+    const isBool = false;
+    if(t.isUnion){
+        const unionTypes = t.getUnionTypes();
+        for(const u of unionTypes){
+            if(u.isIntersection()){
+                const intersectTypes = u.getIntersectionTypes()
+                for(const i of intersectTypes){
+                    return isBool || isBoolean(i);
+                }
+            }else{
+                return isBool || isBoolean(u);
+          }
+        }
+    }
+
+    return isBool || t.isBoolean() ||  t.isBooleanLiteral();
+}
 // quotelessString removes " and ' from string
 export function quotelessString(inString: string): string{
     //TODO: modify to regexp for before and after string
@@ -42,8 +63,8 @@ export function EscapedName(tt:Type): string{
 
 // helper used for model load errors
 export function createLoadError(message:string): adltypes.error{
-    const e = new adltypes.error;
-    e.errorType         = ERROR_TYPE_API_LOAD;
+    const e        = new adltypes.error;
+    e.errorType    = ERROR_TYPE_API_LOAD;
     e.errorMessage = message;
 
     return e;
@@ -73,24 +94,25 @@ export class typerEx{
             for(const  c of intresect){
                 this.unpackIntersection(c, bag);
             }
-        } else {
-                this._Ts.push(t);
+            return;
         }
+        // this is a bool that has some constraints on it
+        // as in defined as boolean & something
+        // which means compiler will translate it to true & something | false & something;
+        if(t.isUnion() && isBoolean(t)){
+            // for this we need to just pick one
+            const unionTypes = t.getUnionTypes();
+            this.unpackIntersection(unionTypes[0], bag)
+            return;
+        }
+        this._Ts.push(t);
     }
     constructor(private t: Type){
+        // we unpack the entire repsentation
+        // example a & b & c where c might be defined as c1 & c2 where c2 is defined as c21 & c22
+        // into
+        // a, b,c , c1, c21, c22
         this.unpackIntersection(t, this._Ts);
-        /*
-        console.log(`${t.getText()} ** ${t.isIntersection()}`)
-        if(t.isIntersection())
-        {
-            t.getIntersectionTypes().forEach(
-                c   =>  {
-                    this._Ts.push(c);
-                });
-            } else {
-            this._Ts.push(t);
-        }
-        */
     }
 
     /* this is a terrible naming and needs to change */
@@ -114,8 +136,9 @@ export class typerEx{
         this._Ts.forEach(
                 t => {
                     const notComplex = t.isString()  ||
-                                                            t.isNumber() ||
-                                                            t.isArray();
+                                       t.isNumber()  ||
+                                       isBoolean(t) ||
+                                       t.isArray();
 
                     // any uncomplex type is a non matcher
                     if(notComplex && !condition){
@@ -126,14 +149,6 @@ export class typerEx{
                     if(notComplex) return; // there is no point to check inhiritance tree
                                                                     // if it is a simple type
 
-/*
-                    if(t.isIntersection()){
-                        const innerTyperEx = new typerEx(t);
-                        const matches = innerTyperEx.MatchingInherits(s, condition);
-                        if(matches.length > 0) a.push(t);// we push the type itself, not the sub type
-                        return; // no need for more work
-                    }
-*/
                     // if the sub class matches, return it
                     if(EscapedName(t) == s){
                         a.push(t);

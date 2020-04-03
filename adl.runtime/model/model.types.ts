@@ -81,14 +81,20 @@ export enum PropertyDataTypeKind{
 // all property data type specific functions and properties on PropertyTypeMode
 // will migrate to these interfaces TODO
 export interface PropertyDataType{
-    readonly hasRemovedConstraint: boolean;
-    readonly hasAliasDataTypeConstraint: boolean;
+    // kind of the data type (scalar, complex, array, complex array, map, complex map)
+    readonly DataTypeKind:PropertyDataTypeKind;
+    readonly Constraints: Array<ConstraintModel>;
     readonly AliasDataTypeName: string;
-    readonly hasEnumConstraint: boolean;
     readonly EnumValues: any[];
     readonly DefaultingConstraints: Array<ConstraintModel>;
     readonly ValidationConstraints: Array<ConstraintModel>;
     readonly ConversionConstraints: Array<ConstraintModel>;
+
+    hasRemovedConstraint(): boolean
+    hasNoAutoConvertConstraint():boolean;
+    hasAliasDataTypeConstraint(): boolean;
+    hasEnumConstraint(): boolean;
+    hasConstraint(name:string):boolean;
 }
 // scalar data type
 export interface PropertyScalarDataType extends PropertyDataType{
@@ -96,47 +102,75 @@ export interface PropertyScalarDataType extends PropertyDataType{
 }
 // complex data type (but not map)
 export interface PropertyComplexDataType extends PropertyDataType{
-    readonly DataTypeName: string;
-    readonly ComplexDataType: ApiTypeModel;
+    readonly ComplexDataTypeName: string;
+    readonly ComplexDataTypeModel: ApiTypeModel;
 }
 // array data type
 export interface PropertyArrayDataType extends PropertyDataType{
-    readonly ElementDataTypeName: string;
     readonly ElementValidationConstraints:Array<ConstraintModel>;
+    readonly ElementAliasDataTypeName: string;
+    readonly ElementEnumValues: any[];
+    readonly ElementConstraints:Array<ConstraintModel>;
+    hasElementAliasDataTypeConstraint(): boolean;
+    hasElementEnumConstraint(): boolean;
+}
+export interface PropertySimpleArrayDataType extends PropertyArrayDataType{
+    readonly ElementDataTypeName: string;
 }
 
 // array of complex objects
 export interface PropertyComplexArrayDataType extends PropertyArrayDataType{
-    readonly ElementComplexDataType: ApiTypeModel;
+    readonly ElementComplexDataTypeName: string;
+    readonly ElementComplexDataTypeModel: ApiTypeModel;
 }
 
 // map
 export interface PropertyMapDataType extends PropertyDataType{
-    readonly MapKeyDataTypeName: string;
-    readonly MapValueDataTypeName: string;
-    readonly MapKeyConstraints: Array<ConstraintModel>;
-    readonly MapValueConstraints: Array<ConstraintModel>;
+    readonly KeyDataTypeName: string;
+    readonly KeyConstraints: Array<ConstraintModel>;
+    readonly KeyValidationConstraints:Array<ConstraintModel>;
+    readonly KeyAliasDataTypeName: string;
+    readonly KeyEnumValues: any[];
+    hasKeyAliasDataTypeConstraint(): boolean;
+    hasKeyEnumConstraint(): boolean;
 }
+
+// simple map
+export interface PropertySimpleMapDataType extends PropertyMapDataType{
+    readonly ValueDataTypeName: string;
+    readonly ValueAliasDataTypeName: string;
+    readonly ValueEnumValues: any[];
+    readonly ValueConstraints: Array<ConstraintModel>;
+    readonly ValueValidationConstraints: Array<ConstraintModel>;
+
+    hasValueAliasDataTypeConstraint(): boolean;
+    hasValueEnumConstraint(): boolean;
+}
+
 // map of complex objects
 export interface PropertyComplexMapDataType extends PropertyMapDataType{
-    readonly ValueComplexDataType: ApiTypeModel;
+    readonly ValueConstraints: Array<ConstraintModel>;
+    readonly ValueValidationConstraints: Array<ConstraintModel>;
+    readonly ValueComplexDataTypeName: string;
+    readonly ValueComplexDataTypeModel: ApiTypeModel;
 }
+
 
 // typeguards
 export type AnyAdlPropertyDataTypeModel = PropertyDataType |
                                           PropertyScalarDataType |
                                           PropertyComplexDataType |
-                                          PropertyArrayDataType |
+                                          PropertySimpleArrayDataType |
                                           PropertyComplexArrayDataType |
-                                          PropertyMapDataType |
+                                          PropertySimpleMapDataType |
                                           PropertyComplexMapDataType;
 
 export function isPropertyDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyDataType {
     return !isPropertyScalarDataType(model) &&
             !isPropertyComplexDataType(model) &&
-            !isPropertyArrayDataType(model) &&
+            !isPropertySimpleArrayDataType(model) &&
             !isPropertyComplexArrayDataType(model) &&
-            !isPropertMapDataType(model) &&
+            !isPropertSimpleMapDataType(model) &&
             !isPropertyComplexMapDataType(model) &&
             (model as PropertyDataType).hasRemovedConstraint !== undefined;
 }
@@ -146,23 +180,23 @@ export function isPropertyScalarDataType(model: AnyAdlPropertyDataTypeModel): mo
 }
 
 export function isPropertyComplexDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyComplexDataType {
-    return (model as PropertyComplexDataType).ComplexDataType !== undefined;
+    return (model as PropertyComplexDataType).ComplexDataTypeModel !== undefined;
 }
 
-export function isPropertyArrayDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyArrayDataType {
-    return !isPropertyComplexArrayDataType(model) && (model as PropertyArrayDataType).ElementDataTypeName !== undefined;
+export function isPropertySimpleArrayDataType(model: AnyAdlPropertyDataTypeModel): model is PropertySimpleArrayDataType {
+    return !isPropertyComplexArrayDataType(model) && (model as PropertySimpleArrayDataType).ElementDataTypeName !== undefined;
 }
 
 export function isPropertyComplexArrayDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyComplexArrayDataType {
-    return (model as PropertyComplexArrayDataType).ElementComplexDataType !== undefined;
+    return (model as PropertyComplexArrayDataType).ElementComplexDataTypeModel !== undefined;
 }
 
-export function isPropertMapDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyMapDataType {
-    return !isPropertyComplexMapDataType(model) && (model as PropertyMapDataType).MapKeyDataTypeName !== undefined;
+export function isPropertSimpleMapDataType(model: AnyAdlPropertyDataTypeModel): model is PropertySimpleMapDataType {
+    return !isPropertyComplexMapDataType(model) && (model as PropertySimpleMapDataType).ValueAliasDataTypeName !== undefined;
 }
 
 export function isPropertyComplexMapDataType(model: AnyAdlPropertyDataTypeModel): model is PropertyComplexMapDataType {
-    return (model as PropertyComplexMapDataType).ValueComplexDataType !== undefined;
+    return (model as PropertyComplexMapDataType).ValueComplexDataTypeName !== undefined;
 }
 
 

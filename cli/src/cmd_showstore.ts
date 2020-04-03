@@ -33,14 +33,15 @@ export class showStoreAction extends CommandLineAction {
     private printApiTypeModel(prefix: string, model:adlruntime.ApiTypeModel): void{
         // properties
         for(const prop  of model.Properties){
-            if(!prop.isRemoved){
-                console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
-             }
-             if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex ||
+            if(prop.isRemoved) return;
+            console.log(`${prefix} Property:${prop.Name}(${prop.DataTypeName}/${prop.AliasDataTypeName}) ${this.getPropertiesConstraintsAsText(prop)}`);
+            if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex ||
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexArray ||
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexMap){
+                    console.log(prefix + " "+ "++" + prop.DataTypeName)
                     this.printApiTypeModel(prefix + " ", prop.ComplexDataType)
-             }
+            }
+
             if(prop.isMap()){
                 let constraintAsText = ""
                 for(const c of prop.MapKeyConstraints){
@@ -56,7 +57,6 @@ export class showStoreAction extends CommandLineAction {
                 }
                 if(constraintAsText.length > 0)
                     console.log(`${prefix} * ValueConstraints: ${constraintAsText}`);
-
             }
         }
     }

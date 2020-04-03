@@ -63,16 +63,6 @@ function getPropertyTrueType(containerDeclaration:ClassDeclaration | InterfaceDe
     return actual;
 }
 
-function getTrueType(tt: Type): Type{
-    if(tt.isIntersection()){ // drill deeper
-        const typer = new helpers.typerEx(tt);
-        const nonConstraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, false);
-        return getTrueType(nonConstraintTypes[0]);
-    }
-
-    return tt;
-}
-
 // represents a constraint
 class property_constraint implements modeltypes.ConstraintModel{
     get Name(): string{
@@ -86,265 +76,130 @@ class property_constraint implements modeltypes.ConstraintModel{
 }
 
 export class type_property{
-    private _tpEx : helpers.typerEx;
-    // cached objects.
-    private _constraints: Array<modeltypes.ConstraintModel> | undefined;
-    private _dataType_trueType: Type | undefined; // cached true type of property (after unpacking constraints, type aliases, intersections.)
-    private _complexType: modeltypes.ApiTypeModel // cached complex type if DataTypeKind == Complex || ArrayComplex
-
-    // if it is complex type then  PropertyDataType_TrueType = type of complex type
-    // if it is array then true data type will point to type of array element
-    // Map is treated as special case, and should be merged in the same logic (TODO)
-    private get PropertyDataType_TrueType(): Type{
-        if(this._dataType_trueType != undefined) return this._dataType_trueType;
-        const nonConstraintsTypes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-        const t = nonConstraintsTypes[0]; // property load() ensures that we have only one in this list
-
-        const true_t = getPropertyTrueType(this.containerDeclaration, this.containerType, t);
-        this._dataType_trueType = true_t;
-        return this._dataType_trueType as Type;
-    }
-
-    private isValidPropertyDataType():boolean{
-        let true_t:Type;
-        const declared_t = this.PropertyDataType_TrueType;
-        const s = this.PropertyDataType_TrueType.getSymbol();
-
-        if(s != undefined)
-            true_t = s.getDeclaredType();
-        else
-            true_t =this.PropertyDataType_TrueType;
-
-
-        // TODO check typescript built in map, set, array types.. all are unallowed
-        if(true_t.isString() || true_t.isNumber()) return true;
-        if(true_t.isClassOrInterface() || true_t.isIntersection()){
-            // regular class or interface
-            if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME) return true;
-
-            // map key and value validation
-            // key validation
-            const typeArgs = declared_t.getTypeArguments();
-            if(typeArgs[0].isString() || typeArgs[0].isNumber()) return true;
-            // value validation
-            if(typeArgs[1].isString() || typeArgs[1].isNumber() || typeArgs[1].isClass() || typeArgs[0].isInterface) return true;
-            // if all failed
-            return false;
-        }
-
-        if(true_t.isArray()){
-            const element_t = true_t.getArrayElementType();
-            if(!element_t) return false; // unknown types
-            if(!element_t.isString() && !element_t.isNumber() && !element_t.isClassOrInterface() && !element_t.isIntersection()) return false;
-            if(element_t.isAny()) return false; // that we can not work with!
-
-            return true;
-        }
-        return false;
-    }
-
+    private _property_data_type_model: modeltypes.AnyAdlPropertyDataTypeModel;
     get Name(): string{
         return this.p.getName();
     }
 
     get MapKeyDataTypeName(): string{
-        if(!this.isMap())
-            throw new Error(`property ${this.Name} is not a map`);
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyDataTypeName;
 
-        const true_t = this.PropertyDataType_TrueType;
-        const typeArgs = true_t.getTypeArguments();
-        return helpers.EscapedName(getTrueType(typeArgs[0]));
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyDataTypeName;
+
+        throw new Error(`property ${this.Name} is not a map`);
     }
 
     get MapValueDataTypeName(): string{
-        if(!this.isMap())
-            throw new Error(`property ${this.Name} is not a map`);
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueDataTypeName;
 
-        const true_t = this.PropertyDataType_TrueType;
-        const typeArgs = true_t.getTypeArguments();
-        return helpers.EscapedName(getTrueType(typeArgs[1]));
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueComplexDataTypeName;
+
+        throw new Error(`property ${this.Name} is not a map`);
     }
 
     get DataTypeName():string{
-        if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar)
-            return this.PropertyDataType_TrueType.getText();
+        if(modeltypes.isPropertyScalarDataType( this._property_data_type_model))
+            return this._property_data_type_model.DataTypeName;
 
-        if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex)
-            return helpers.EscapedName(this.PropertyDataType_TrueType);
+        if(modeltypes.isPropertyComplexDataType(this._property_data_type_model))
+            return this._property_data_type_model.ComplexDataTypeName;
 
-        if(this.isArray()){
-            const true_t = this.PropertyDataType_TrueType;
-            const element_t = true_t.getArrayElementType() as Type;
-            const element_t_true = getPropertyTrueType(this.containerDeclaration, this.containerType, element_t);
+        if(modeltypes.isPropertySimpleArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementDataTypeName;
 
-            if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray)
-                return element_t_true.getText();
-            else
-                return helpers.EscapedName(element_t_true);
-        }
-        if(this.DataTypeKind == modeltypes.PropertyDataTypeKind.Map ||
-           this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap) return "Map";
+        if(modeltypes.isPropertyComplexArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementComplexDataTypeName;
 
-        // its stops here
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueDataTypeName;
+
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueComplexDataTypeName;
+
         throw new Error("unable to get data type name");
     }
 
     get isEnum(): boolean{
-        const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
-        return (enumConstraints.length != 0);
+        return this._property_data_type_model.hasEnumConstraint();
     }
     get EnumValues(): any[]{
-        const vals: any[] = [];
-        if(!this.isEnum) return vals;
-
-        const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
-        // would be nice if we can allow arrays . so user can do [v1...values], [v2.. values]
-        return enumConstraints[0].Arguments[0]; // must be one because we pre validate
+        return this._property_data_type_model.EnumValues;
     }
 
     get isAliasDataType(): boolean{
-        const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
-        return dataTypes.length == 1; // must have one, we validate against that
+        return this._property_data_type_model.hasAliasDataTypeConstraint();
     }
 
     get AliasDataTypeName(): string{
         if(!this.isAliasDataType) return this.DataTypeName;
-        const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
-
-        const c = dataTypes[0]; // first and only constraint
-        return c.Arguments[0];
+        return this._property_data_type_model.AliasDataTypeName;
     }
 
     // only valid for properties that are either `complex` or `array of complex` or `complex map`
     // if model to be serialized this needs to return undefined.
     get ComplexDataType(): modeltypes.ApiTypeModel{
-        if(this.DataTypeKind != modeltypes.PropertyDataTypeKind.Complex &&
-           this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexArray &&
-           this.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexMap)
-                throw new Error(`propery ${this.Name} data type is not complex, array of complex types, or map of complex types`);
 
-            return this._complexType;
+        if(modeltypes.isPropertyComplexDataType(this._property_data_type_model))
+            return this._property_data_type_model.ComplexDataTypeModel;
+
+       if(modeltypes.isPropertyComplexArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementComplexDataTypeModel;
+
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueComplexDataTypeModel;
+
+        throw new Error(`propery ${this.Name} data type is not complex, array of complex types, or map of complex types`);
     }
 
     get isRemoved():boolean{
-            return this.hasConstraint(adltypes.CONSTRAINT_NAME_REMOVED);
+            return this._property_data_type_model.hasRemovedConstraint();
     }
 
     get isManaullyConverted(): boolean{
-        return this.hasConstraint(adltypes.CONSTRAINT_NAME_NOAUTOCONVERSION);
+        return this._property_data_type_model.hasNoAutoConvertConstraint();
     }
 
     get DataTypeKind(): modeltypes.PropertyDataTypeKind{
-        const true_t = this.PropertyDataType_TrueType;
-
-        if(true_t.isString() || true_t.isNumber()) return modeltypes.PropertyDataTypeKind.Scalar;
-        if(true_t.isArray()){
-                const element_t = true_t.getArrayElementType() as Type;
-                const element_t_true = getPropertyTrueType(this.containerDeclaration, this.containerType, element_t);
-
-                if(element_t_true.isString() || element_t_true.isNumber()) return modeltypes.PropertyDataTypeKind.ScalarArray;
-                    return modeltypes.PropertyDataTypeKind.ComplexArray;
-        }
-
-        // if we are here then we must have a symbol
-        // Maps are treated differently
-        if(helpers.EscapedName(true_t) == adltypes.ADL_MAP_TYPENAME){
-            if(true_t.getTypeArguments()[1].isInterface() || true_t.getTypeArguments()[1].isClass())
-                return modeltypes.PropertyDataTypeKind.ComplexMap;
-
-            // just a regular map
-            return modeltypes.PropertyDataTypeKind.Map;
-        }
-
-        return modeltypes.PropertyDataTypeKind.Complex
+        return this._property_data_type_model.DataTypeKind;
     }
 
     // returns all the constraints assigned to this property
     get Constraints(): Array<modeltypes.ConstraintModel>{
-        // cached?
-        if(this._constraints != undefined)
-            return this._constraints as Array<modeltypes.ConstraintModel>;
-
-        const constraints = new  Array<modeltypes.ConstraintModel>();
-        const constraintsTypes = this._tpEx.MatchIfInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-        for(let tt of constraintsTypes){
-            const name = helpers.EscapedName(tt);
-            const args = new Array<any>();
-            // get args
-            tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));
-            const c = new property_constraint(name, args);
-
-            // add it
-            constraints.push(c);
-        }
-        // cache
-        this._constraints = constraints;
-
-        return this._constraints as Array<modeltypes.ConstraintModel>;
+        return this._property_data_type_model.Constraints;
     }
 
     // constraints on Array elements (if applicable)
     get ArrayElementConstraints(): Array<modeltypes.ConstraintModel>{
-        if(!this.isArray())
-                return new Array<modeltypes.ConstraintModel>();
+        if(modeltypes.isPropertySimpleArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementConstraints;
 
-        // TODO cache this
-        const true_t = this.PropertyDataType_TrueType; // this is actual datatype of property Prop:string & whatever[] => string & whatever[]
-        const element_t = true_t.getArrayElementType() as Type; // => string& whatever;
-        const typer = new helpers.typerEx(element_t);
+        if(modeltypes.isPropertyComplexArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementConstraints;
 
-        const constraints = new  Array<modeltypes.ConstraintModel>();
-        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT, true);
-        for(let t of constraintTypes){
-            const name = helpers.EscapedName(t);
-
-            const args = new Array<any>();
-            // get args
-            t.getTypeArguments().forEach(arg => args.push(arg.getText()));
-            const c = new property_constraint(name, args);
-
-            // add it
-            constraints.push(c);
-        }
-
-        return constraints;
+        throw new Error(`propety ${this.Name} is not an array`)
     }
 
     get MapKeyConstraints(): Array<modeltypes.ConstraintModel>{
-        const constraints = new  Array<modeltypes.ConstraintModel>();
-        if(!this.isMap) return constraints;
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyValidationConstraints;
 
-        const true_t = this.PropertyDataType_TrueType;
-        const typeArgs = true_t.getTypeArguments();
-        const typer = new helpers.typerEx(typeArgs[0]);
-        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
-        for( let t of constraintTypes){
-            const name = helpers.EscapedName(t);
-            const args = new Array<any>();
-             t.getTypeArguments().forEach(arg => args.push(arg.getText()));
-            const c = new property_constraint(name, args);
-            constraints.push(c);
-        }
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyValidationConstraints;
 
-        return constraints;
+        throw new Error(`property ${this.Name} is not a map`);
     }
     get MapValueConstraints(): Array<modeltypes.ConstraintModel>{
-        const constraints = new  Array<modeltypes.ConstraintModel>();
-        if(!this.isMap) return constraints;
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueValidationConstraints;
 
-        const true_t = this.PropertyDataType_TrueType;
-        const typeArgs = true_t.getTypeArguments();
-        const typer = new helpers.typerEx(typeArgs[1]);
-        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
-        for( let t of constraintTypes){
-            const name = helpers.EscapedName(t);
-            const args = new Array<any>();
-             t.getTypeArguments().forEach(arg => args.push(arg.getText()));
-            const c = new property_constraint(name, args);
-            constraints.push(c);
-        }
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueValidationConstraints;
 
-        return constraints;
+        throw new Error(`property ${this.Name} is not a map`);
     }
 
     get isOptional(): boolean{
@@ -357,11 +212,62 @@ export class type_property{
                 private _apiTypeModelCreator: apiTypeModelCreator){
     }
 
-    // returns constraints filtered to "defaulting"
-    // TODO: cache all types of get*Constraints()
-    private getConstraintsByType(constraintType: string): Array<modeltypes.ConstraintModel>{
+
+    getDefaultingConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._property_data_type_model.DefaultingConstraints;
+    }
+
+    getValidationConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._property_data_type_model.ValidationConstraints;
+    }
+
+    getConversionConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._property_data_type_model.ConversionConstraints;
+    }
+
+    // constraints on Array elements (if applicable)
+    getArrayElementValidationConstraints(): Array<modeltypes.ConstraintModel>{
+        if(modeltypes.isPropertySimpleArrayDataType(this._property_data_type_model))
+            return this._property_data_type_model.ElementValidationConstraints;
+
+        if((modeltypes.isPropertyComplexArrayDataType(this._property_data_type_model)))
+            return this._property_data_type_model.ElementValidationConstraints;
+        throw new Error(`property ${this.Name} is not array`)
+    }
+
+    // short cut to identify if property is array
+    isArray(): boolean{
+        return this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray || this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray;
+    }
+    isMap(): boolean{
+          return this.DataTypeKind == modeltypes.PropertyDataTypeKind.Map || this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap;
+    }
+
+    load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
+         const property_data_type_model = createPropertyDataType(this.containerType,
+                                                           this.containerDeclaration,
+                                                           this.p,
+                                                           this._apiTypeModelCreator,
+                                                           options,
+                                                           errors);
+
+        // this data type is invalid
+        if(property_data_type_model == undefined){
+            return false;
+        }
+        this._property_data_type_model = property_data_type_model;
+        return true;
+    }
+}
+
+// base class for all property data types
+class property_DataType implements modeltypes.PropertyDataType{
+    // results to all compiler api calls are cached here
+    protected _cache: Map<string, any> = new Map<string, any>();
+
+    protected getConstraintsByType(constraintType: string): Array<modeltypes.ConstraintModel>{
         const constraints = new  Array<modeltypes.ConstraintModel>();
-        const constraintsTypes = this._tpEx.MatchIfInherits(constraintType);
+        const constraintsTypes = this.typer.MatchIfInherits(constraintType);
         for(let tt of constraintsTypes){
             const name = helpers.EscapedName(tt);
             const args = new Array<any>();
@@ -371,171 +277,537 @@ export class type_property{
             // add it
         constraints.push(c);
         }
-        return constraints
+        return constraints;
+    }
+
+
+    constructor(protected kind: modeltypes.PropertyDataTypeKind,
+                protected typer: helpers.typerEx,
+                protected appeared_t: Type, /* given string & mustMatch & something & something, appeared is string */
+                protected containerType: Type,
+                protected containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                protected p: PropertySignature | PropertyDeclaration,
+                protected opts: modeltypes.apiProcessingOptions){
 
     }
 
-    getDefaultingConstraints(): Array<modeltypes.ConstraintModel>{
-        return this.getConstraintsByType(adltypes.INTERFACE_NAME_DEFAULTINGCONSTRAINT);
+    // identify DataTypeKind by interrogating the appeared type of this property
+    get DataTypeKind(): modeltypes.PropertyDataTypeKind{
+        return this.kind;
     }
 
-    getValidationConstraints(): Array<modeltypes.ConstraintModel>{
-        return this.getConstraintsByType(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT);
-    }
+    // finds all constraints defined on this propeties
+    get Constraints(): Array<modeltypes.ConstraintModel>{
+        if(this._cache.has("Constraints"))
+            return this._cache.get("Constraints") as Array<modeltypes.ConstraintModel>;
 
-    getConversionConstraints(): Array<modeltypes.ConstraintModel>{
-        return this.getConstraintsByType(adltypes.INTERFACE_NAME_CONVERSIONCONSTRAINT);
-    }
-
-    // constraints on Array elements (if applicable)
-    getArrayElementValidationConstraints(): Array<modeltypes.ConstraintModel>{
-        if(!this.isArray())
-                return new Array<modeltypes.ConstraintModel>();
-
-        // TODO cache this
-        const true_t = this.PropertyDataType_TrueType; // this is actual datatype of property Prop:string & whatever[] => string & whatever[]
-        const element_t = true_t.getArrayElementType() as Type; // => string& whatever;
-        const typer = new helpers.typerEx(element_t);
-
-        const constraints = new  Array<modeltypes.ConstraintModel>();
-        const constraintTypes = typer.MatchingInherits(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT, true);
-        for(let t of constraintTypes){
-            const name = helpers.EscapedName(t);
+        const constraints = new Array<modeltypes.ConstraintModel>();
+        const constraintsTypes = this.typer.MatchIfInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
+        for(let tt of constraintsTypes){
+            const name = helpers.EscapedName(tt);
             const args = new Array<any>();
             // get args
-            t.getTypeArguments().forEach(arg => args.push(arg.getText()));
+            tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));
             const c = new property_constraint(name, args);
-
             // add it
             constraints.push(c);
         }
 
-        return constraints;
+        this._cache.set("Constraints", constraints);
+        return this._cache.get("Constraints") as Array<modeltypes.ConstraintModel>;
     }
 
-    // short cut to identify if property is array
-    isArray(): boolean{
-        return this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray ||
-                                    this.DataTypeKind == modeltypes.PropertyDataTypeKind.ScalarArray;
-    }
-    isMap(): boolean{
-          return this.DataTypeKind == modeltypes.PropertyDataTypeKind.Map ||
-                                    this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap;
+    // finds if this property is constraint by adl.Removed
+    hasRemovedConstraint(): boolean{
+        if(this._cache.has("hasRemovedConstraint"))
+            return this._cache.get("hasRemovedConstraint") as boolean;
 
+        this._cache.set("hasRemovedConstraint", this.hasConstraint(adltypes.CONSTRAINT_NAME_REMOVED));
+        return this._cache.get("hasRemovedConstraint") as boolean;
     }
 
-    hasConstraint(constraintName:string): boolean{
+    hasNoAutoConvertConstraint():boolean{
+         if(this._cache.has("hasNoAutoConvertConstraint"))
+            return this._cache.get("hasNoAutoConvertConstraint") as boolean;
+
+        this._cache.set("hasNoAutoConvertConstraint", this.hasConstraint(adltypes.CONSTRAINT_NAME_NOAUTOCONVERSION));
+        return this._cache.get("hasNoAutoConvertConstraint") as boolean;
+
+    }
+    // finds if this property is constraint by AdlDataType
+    hasAliasDataTypeConstraint(): boolean{
+        if(this._cache.has("hasAliasDataTypeConstraint"))
+            return this._cache.get("hasAliasDataTypeConstraint") as boolean;
+
+        const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+        this._cache.set("hasAliasDataTypeConstraint", dataTypes.length == 1); // we pre validate that only one of these exist
+        return this._cache.get("hasAliasDataTypeConstraint") as boolean;
+    }
+
+    // finds AdlDataType and returns the type arguments for it
+    get AliasDataTypeName(): string{
+         if(this._cache.has("AliasDataTypeName"))
+            return this._cache.get("AliasDataTypeName") as string;
+
+         if(!this.hasAliasDataTypeConstraint()){
+            this._cache.set("AliasDataTypeName" ,"");
+            return this._cache.get("AliasDataTypeName") as string;
+         }
+
+        // we know that it must have one since this.hasAliasDataTypeConstraint returned true;
+        const dataTypes =  this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
+        const c = dataTypes[0];
+        this._cache.set("AliasDataTypeName" ,c. Arguments[0]);
+        return this._cache.get("AliasDataTypeName") as string;
+    }
+
+    // finds if enum constraint is defined on this property
+    hasEnumConstraint(): boolean{
+        if(this._cache.has("hasEnumConstraint"))
+            return this._cache.get("hasEnumConstraint") as boolean;
+
+        const enumConstraints =  this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
+        this._cache.set("hasEnumConstraint", enumConstraints.length == 1); // we pre validate that only one of these exist
+        return this._cache.get("hasEnumConstraint") as boolean;
+    }
+
+    get EnumValues(): any[]{
+         if(this._cache.has("EnumValues"))
+            return this._cache.get("EnumValues") as any[];
+
+        const vals: any[] = [];
+        if(!this.hasEnumConstraint()){
+            this._cache.set("EnumValues", vals);
+            return this._cache.get("EnumValues") as any[];
+        }
+
+        const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
+        this._cache.set("EnumValues", enumConstraints[0].Arguments[0]); // also pre validated
+        return this._cache.get("EnumValues") as any[];
+    }
+
+    get DefaultingConstraints(): Array<modeltypes.ConstraintModel>{
+        if(this._cache.has("DefaultingConstraints"))
+            return this._cache.get("DefaultingConstraints") as Array<modeltypes.ConstraintModel>;
+
+        this._cache.set("DefaultingConstraints", this.getConstraintsByType(adltypes.INTERFACE_NAME_DEFAULTINGCONSTRAINT));
+        return this._cache.get("DefaultingConstraints") as Array<modeltypes.ConstraintModel>;
+    }
+
+    get ValidationConstraints(): Array<modeltypes.ConstraintModel>{
+        if(this._cache.has("ValidationConstraints"))
+            return this._cache.get("ValidationConstraints") as Array<modeltypes.ConstraintModel>;
+
+        this._cache.set("ValidationConstraints", this.getConstraintsByType(adltypes.INTERFACE_NAME_VALIDATIONCONSTRAINT));
+        return this._cache.get("ValidationConstraints") as Array<modeltypes.ConstraintModel>;
+    }
+
+    get ConversionConstraints(): Array<modeltypes.ConstraintModel>{
+         if(this._cache.has("ConversionConstraints"))
+            return this._cache.get("ConversionConstraints") as Array<modeltypes.ConstraintModel>;
+
+        this._cache.set("ConversionConstraints", this.getConstraintsByType(adltypes.INTERFACE_NAME_CONVERSIONCONSTRAINT));
+        return this._cache.get("ConversionConstraints") as Array<modeltypes.ConstraintModel>;
+    }
+
+    //this call is not cached and should be used infrequently.
+    hasConstraint(name:string):boolean{
         const constraints = this.Constraints;
-        return (constraints.filter(c =>  c.Name == constraintName).length != 0)
+        return constraints.filter(c => c.Name === name).length > 0;
     }
 
-    load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
-          createPropertyDataType(this.containerType,
-                                this.containerDeclaration,
-                                this.p,
-                                this._apiTypeModelCreator,
-                                options,
-                                errors);
+}
+// scalar data type
+export class  property_ScalarDataType extends property_DataType
+                                     implements modeltypes.PropertyScalarDataType{
 
+       constructor(typer: helpers.typerEx,
+                   appeared_t: Type, /* true type of appear_t */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.Scalar,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+    }
 
-        const typeNode = this.p.getTypeNode();
-        if(!typeNode){
-            const message = `property ${this.Name} failed to load, failed to get TypeNode`;
-            options.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return false;
-        }
-        const t = typeNode.getType()
-        this._tpEx = new helpers.typerEx(t);
-
-        // weather or not the property defined as an intersection, we need to make
-        // sure that only ONE type is the data type, the rest are constraints
-        // fancy_property: string & Required (OK)
-        // fancy_property: string & int & Required (NOT OK: data type is intersecting)
-        // fancy_property: Required & MustMatch<..> (NOT OK: there is no data type)
-        // TODO check for union types
-        const nonConstraintsTypeNodes = this._tpEx.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-        if(nonConstraintsTypeNodes.length != 1){
-            // let us assume that it was not defined
-            let message = `invalid data type for property ${this.Name}. must have a data type defined`;
-
-            if(nonConstraintsTypeNodes.length == 1)
-                    message = `invalid data type for property ${this.Name}. must have a single data type`;
-
-            options.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return false;
+    get DataTypeName(): string{
+        if(this._cache.has("DataTypeName")) return this._cache.get("DataTypeName") as string;
+        //special case for boolean data type
+        // because we unpack it anyway (even if it is not an intersection), we always pick "false"
+        // literal (check helpers.isboolean() implementation)
+        if(helpers.isBoolean(this.appeared_t)){
+            this._cache.set("DataTypeName","boolean");
+            return this._cache.get("DataTypeName") as string;
         }
 
-        if(!this.isValidPropertyDataType()){
-            const message = `invalid data type for property ${this.Name} allowed properties are string, number, intersections, class, interface and standard js arrays`
-            options.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return false;
-        }
-
-        // must have max of one adl.DataType
-        const dataTypes = this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
-        if(dataTypes.length > 1){
-            const message = `invalid data type for property ${this.Name} multiple adl.DataType defined on property`
-            options.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return false;
-        }
-
-        const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_DATATYPE);
-        if(dataTypes.length > 1){
-            const message = `invalid data type for property ${this.Name} multiple adl.OneOf defined on property`
-            options.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return false;
-        }
-
-        // is data type is a complex type..  something that we can cache? if so let us cache it
-        const shouldProcessComplexType = this.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex ||
-                                         this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray ||
-                                         this.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap;
-        if(!shouldProcessComplexType) return true;
-
-        let target_type:Type;
-        switch(this.DataTypeKind){
-            case modeltypes.PropertyDataTypeKind.ComplexArray:{
-                target_type = this.PropertyDataType_TrueType.getArrayElementType() as Type;
-                break;
-            }
-            case modeltypes.PropertyDataTypeKind.ComplexMap:{
-                const typeArgs = this.PropertyDataType_TrueType.getTypeArguments();
-                target_type = getTrueType(typeArgs[1]);
-                break;
-            }
-            default:{ /*must be a complex type*/
-                target_type = this.PropertyDataType_TrueType;
-                break;
-            }
-        }
-        const apiTypeModel = this._apiTypeModelCreator(target_type);
-        const loaded = apiTypeModel.load(options, errors);
-        if(loaded)
-            this._complexType = apiTypeModel;
-
-        return loaded;
-        // must be a complex map
+        this._cache.set("DataTypeName", helpers.EscapedName(this.appeared_t));
+        return this._cache.get("DataTypeName") as string;
     }
 }
 
-// base class for all property data types
-class propertyDataType{
-    // results to all compiler api calls are cached here
-    protected _cache: Map<string, any> = new Map<string, any>();
 
-    constructor(private typer: helpers.typerEx,
-                private appeared_t: Type, /* true type of appear_t */
-                private containerType: Type,
-                private containerDeclaration: ClassDeclaration| InterfaceDeclaration,
-                private p: PropertySignature | PropertyDeclaration,
-                private _apiTypeModelCreator: apiTypeModelCreator,
-                private opts: modeltypes.apiProcessingOptions){
+export class  property_ComplexDataType extends property_DataType
+                                     implements modeltypes.PropertyComplexDataType{
 
+       constructor(typer: helpers.typerEx,
+                   appeared_t: Type, /* property type as it appears */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   private _apiTypeModelCreator: apiTypeModelCreator,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.Complex,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+    }
+
+    get ComplexDataTypeName(): string{
+        if(this._cache.has("ComplexDataTypeName")) return this._cache.get("ComplexDataTypeName") as string;
+        this._cache.set("ComplexDataTypeName",helpers.EscapedName(this.appeared_t));
+        return this._cache.get("ComplexDataTypeName") as string;
+
+    }
+    get ComplexDataTypeModel(): modeltypes.ApiTypeModel{
+        if(this._cache.has("ComplexDataTypeModel")) return this._cache.get("ComplexDataTypeModel") as modeltypes.ApiTypeModel;
+        // parsing complex model is part of loading logic
+        throw new Error("Complex data model is not loaded, did you call load();")
+    }
+
+    load(errors: adltypes.errorList): boolean{
+       const apiTypeModel = this._apiTypeModelCreator(this.appeared_t);
+
+        const loaded = apiTypeModel.load(this.opts, errors);
+        if(!loaded) return loaded;
+
+        this._cache.set("ComplexDataTypeModel",  apiTypeModel);
+        return true;
+    }
+}
+export class  property_SimpleArrayDataType extends property_DataType
+                                     implements modeltypes.PropertySimpleArrayDataType{
+        private _element_scalar_data_type:property_ScalarDataType;
+
+       constructor(element_appeared_t: Type, /* element true Type as it appears*/
+                   typer_element: helpers.typerEx,
+                   typer: helpers.typerEx,
+                   appeared_t: Type, /* property type as it appears */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.ScalarArray,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a scalar type to work with element itself
+       this._element_scalar_data_type = new property_ScalarDataType(
+             typer_element,
+             element_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+    }
+
+    get ElementDataTypeName(): string{
+        return this._element_scalar_data_type.DataTypeName;
+    }
+
+    get ElementValidationConstraints():Array<modeltypes.ConstraintModel>{
+        return this._element_scalar_data_type.ValidationConstraints;
+    }
+    get ElementAliasDataTypeName(): string{
+        return this._element_scalar_data_type.AliasDataTypeName;
+    }
+
+    get ElementEnumValues(): any[]{
+        return this._element_scalar_data_type.EnumValues;
+    }
+
+    get ElementConstraints():Array<modeltypes.ConstraintModel>{
+        return this._element_scalar_data_type.Constraints;
+    }
+
+    hasElementAliasDataTypeConstraint(): boolean{
+        return this._element_scalar_data_type.hasAliasDataTypeConstraint();
+    }
+
+    hasElementEnumConstraint(): boolean{
+        return this._element_scalar_data_type.hasEnumConstraint();
+    }
+}
+export class  property_ComplexArrayDataType extends property_DataType
+                                     implements modeltypes.PropertyComplexArrayDataType{
+
+        private _element_complex_data_type:property_ComplexDataType;
+
+       constructor(element_appeared_t: Type, /*array element Type as it appears*/
+                   typer_element: helpers.typerEx,
+                   typer: helpers.typerEx,
+                   appeared_t: Type, /* property type as it appears */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   private _apiTypeModelCreator: apiTypeModelCreator,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.ComplexArray,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a complex type to work with element itself
+       this._element_complex_data_type = new property_ComplexDataType(
+             typer_element,
+             element_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             _apiTypeModelCreator,
+             opts);
+    }
+
+    get ElementComplexDataTypeName(): string{
+        return this._element_complex_data_type.ComplexDataTypeName;
+    }
+
+    get ElementComplexDataTypeModel(): modeltypes.ApiTypeModel{
+        return this._element_complex_data_type.ComplexDataTypeModel;
+
+    }
+    get ElementValidationConstraints():Array<modeltypes.ConstraintModel>{
+        return this._element_complex_data_type.ValidationConstraints;
+    }
+    get ElementAliasDataTypeName(): string{
+        return this._element_complex_data_type.AliasDataTypeName;
+    }
+
+    get ElementEnumValues(): any[]{
+        return this._element_complex_data_type.EnumValues;
+    }
+
+    hasElementAliasDataTypeConstraint(): boolean{
+        return this._element_complex_data_type.hasAliasDataTypeConstraint();
+    }
+
+    hasElementEnumConstraint(): boolean{
+        return this._element_complex_data_type.hasEnumConstraint();
+    }
+
+    load(errors: adltypes.errorList): boolean{
+        return this._element_complex_data_type.load(errors);
+    }
+    get ElementConstraints():Array<modeltypes.ConstraintModel>{
+        return this._element_complex_data_type.Constraints;
+    }
+
+}
+
+export class  property_SimpleMapDataType extends property_DataType
+                                     implements modeltypes.PropertySimpleMapDataType{
+       private _key_scalar_data_type:property_ScalarDataType;
+       private _value_scalar_data_type:property_ScalarDataType;
+
+       constructor(key_appeared_t: Type, /*map key Type as it appears*/
+                   key_typer:helpers.typerEx,
+                   value_appeared_t: Type, /* map value type as it appears */
+                   value_typer: helpers.typerEx,
+                   typer: helpers.typerEx,
+                   appeared_t: Type,  /* property type as it appears */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.Map,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a scalar type to work with map key
+       this._key_scalar_data_type = new property_ScalarDataType(
+             key_typer,
+             key_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a scalar type to work with map value
+       this._value_scalar_data_type = new property_ScalarDataType(
+             value_typer,
+             value_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+    }
+
+    get KeyDataTypeName(): string{
+        return this._key_scalar_data_type.DataTypeName;
+    }
+
+    get KeyConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._key_scalar_data_type.Constraints;
+    }
+
+    get KeyValidationConstraints():Array<modeltypes.ConstraintModel>{
+        return this._key_scalar_data_type.ValidationConstraints;
+    }
+
+    get ValueDataTypeName(): string{
+        return this._key_scalar_data_type.DataTypeName;
+    }
+
+
+    get KeyAliasDataTypeName(): string{
+        return this._key_scalar_data_type.AliasDataTypeName;
+    }
+
+    get KeyEnumValues(): any[]{
+        return this._key_scalar_data_type.EnumValues;
+    }
+
+    hasKeyAliasDataTypeConstraint(): boolean{
+        return this._key_scalar_data_type.hasAliasDataTypeConstraint();
+    }
+
+    hasKeyEnumConstraint(): boolean{
+        return this._key_scalar_data_type.hasEnumConstraint();
+    }
+
+    get ValueAliasDataTypeName(): string{
+        return this._value_scalar_data_type.AliasDataTypeName;
+
+    }
+
+    get ValueEnumValues(): any[]{
+        return this._value_scalar_data_type.EnumValues;
+    }
+
+    get  ValueConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._value_scalar_data_type.Constraints;
+    }
+
+    get ValueValidationConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._value_scalar_data_type.ValidationConstraints;
+    }
+
+    hasValueAliasDataTypeConstraint(): boolean{
+        return this._value_scalar_data_type.hasAliasDataTypeConstraint();
+    }
+
+    hasValueEnumConstraint(): boolean{
+        return this._value_scalar_data_type.hasEnumConstraint();
+    }
+}
+export class  property_ComplexMapDataType extends property_DataType
+                                     implements modeltypes.PropertyComplexMapDataType{
+       private _key_scalar_data_type:property_ScalarDataType;
+       private _value_Complex_data_type:property_ComplexDataType;
+       constructor(key_appeared_t: Type, /*map key Type as it appears*/
+                   key_typer:helpers.typerEx,
+                   value_appeared_t: Type, /* map value type as it appears */
+                   value_typer: helpers.typerEx,
+                   typer: helpers.typerEx,
+                   appeared_t: Type, /* property type as it appears */
+                   containerType: Type,
+                   containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                   p: PropertySignature | PropertyDeclaration,
+                   private _apiTypeModelCreator: apiTypeModelCreator,
+                   opts: modeltypes.apiProcessingOptions){
+       super(modeltypes.PropertyDataTypeKind.ComplexMap,
+             typer,
+             appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a scalar type to work with map key
+       this._key_scalar_data_type = new property_ScalarDataType(
+             key_typer,
+             key_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+             opts);
+
+        // we use a scalar type to work with map value (complex type)
+       this._value_Complex_data_type = new property_ComplexDataType(
+             value_typer,
+             value_appeared_t,
+             containerType,
+             containerDeclaration,
+             p,
+            _apiTypeModelCreator,
+             opts);
+    }
+
+    get KeyDataTypeName(): string{
+        return this._key_scalar_data_type.DataTypeName;
+    }
+
+    get KeyConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._key_scalar_data_type.Constraints;
+    }
+
+    get KeyValidationConstraints():Array<modeltypes.ConstraintModel>{
+        return this._key_scalar_data_type.ValidationConstraints;
+    }
+
+    get KeyAliasDataTypeName(): string{
+        return this._key_scalar_data_type.AliasDataTypeName;
+    }
+
+    get KeyEnumValues(): any[]{
+        return this._key_scalar_data_type.EnumValues;
+    }
+
+    hasKeyAliasDataTypeConstraint(): boolean{
+        return this._key_scalar_data_type.hasAliasDataTypeConstraint();
+    }
+
+    hasKeyEnumConstraint(): boolean{
+        return this._key_scalar_data_type.hasEnumConstraint();
+    }
+
+    get ValueConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._value_Complex_data_type.Constraints;
+    }
+
+    get ValueValidationConstraints(): Array<modeltypes.ConstraintModel>{
+        return this._value_Complex_data_type.ValidationConstraints;
+    }
+
+    get ValueComplexDataTypeName(): string{
+        return this._value_Complex_data_type.ComplexDataTypeName
+    }
+
+    get ValueComplexDataTypeModel(): modeltypes.ApiTypeModel{
+        return this._value_Complex_data_type.ComplexDataTypeModel;
+    }
+
+    load(errors: adltypes.errorList): boolean{
+        return this._value_Complex_data_type.load(errors);
     }
 }
 
@@ -553,8 +825,11 @@ function createPropertyDataType(containerType: Type,
         errors.push(helpers.createLoadError(message));
         return undefined;
     }
+    // container type must have a symbol since it is contains a property
+    const nameOfContainer = helpers.EscapedName(containerType);
 
-    const typer = new helpers.typerEx(typeNode.getType());
+    const original_t = typeNode.getType();
+    const typer = new helpers.typerEx(original_t);
 
      // validation logic
      // weather or not the property defined as an intersection, we need to make
@@ -566,10 +841,10 @@ function createPropertyDataType(containerType: Type,
      const nonConstraintsTypeNodes = typer.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
      if(nonConstraintsTypeNodes.length != 1){
      // let us assume that it was not defined
-     let message = `invalid data type for property ${p.getName()}. must have a data type defined`;
+     let message = `invalid data type for property ${nameOfContainer}/${p.getName()}. must have a data type defined`;
 
      if(nonConstraintsTypeNodes.length == 1)
-        message = `invalid data type for property ${p.getName()}. must have a single data type`;
+        message = `invalid data type for property ${nameOfContainer}/${p.getName()}. must have a single data type`;
 
         opts.logger.err(message);
         errors.push(helpers.createLoadError(message));
@@ -579,7 +854,7 @@ function createPropertyDataType(containerType: Type,
      // must have max of one adl.DataType
      const dataTypes = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
      if(dataTypes.length > 1){
-        const message = `invalid data type for property ${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
+        const message = `invalid data type for property ${nameOfContainer}/${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
         opts.logger.err(message);
         errors.push(helpers.createLoadError(message));
         return undefined;
@@ -588,7 +863,7 @@ function createPropertyDataType(containerType: Type,
      // must have max of one OneOf(enum);
      const enumConstraints = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
      if(dataTypes.length > 1){
-        const message = `invalid data type for property ${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
+        const message = `invalid data type for property ${nameOfContainer}/${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
         opts.logger.err(message);
         errors.push(helpers.createLoadError(message));
         return undefined;
@@ -596,9 +871,21 @@ function createPropertyDataType(containerType: Type,
 
 
      // data type validation and selection
-     const t      = nonConstraintsTypeNodes[0]; // this the Type that represents the non constraint
+     const t  = nonConstraintsTypeNodes[0]; // this the Type that represents the non constraint
      //appeared_t is what appars in property definition
      const appeared_t = getPropertyTrueType(containerDeclaration, containerType, t);
+     // flush out everything we don't work with
+     // union types will be introduced when we build for unions
+     // unions are only allowed in boolean because of the way the compiler represents boolean internally
+     // should also check for literals
+     if(t.isUnion() && !helpers.isBoolean(appeared_t)){
+        const message = `invalid data type for property ${nameOfContainer}/${p.getName()}  unions are not allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+     }
+
+
      // true_t points to declaration if it has any
      let true_t = appeared_t; // both are the same initially
 
@@ -607,72 +894,26 @@ function createPropertyDataType(containerType: Type,
      // if type has declartion then declared_t will point to it
      if(s != undefined) true_t = s.getDeclaredType();
 
-    // container type must have a symbol since it is contains a property
-    const nameOfContainer = containerType.getSymbolOrThrow().getName();
-
-    if(true_t.isString() || true_t.isNumber() || true_t.isBoolean()) {
-        // TODO load scalar datatypemodel
+    if(true_t.isString() || true_t.isNumber() || helpers.isBoolean(true_t)) {
         opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a scalar`);
-        return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+        return new property_ScalarDataType(typer,
+                                          appeared_t,
+                                          containerType,
+                                          containerDeclaration,
+                                          p,
+                                          opts);
     };
-
-    if(true_t.isClassOrInterface() || true_t.isIntersection()){
-        const dataTypeName = true_t.getSymbolOrThrow().getName();
-        if(dataTypeName == "Map" || dataTypeName == "Set"){ /*array<T> appearts to behave exactly like an array from compiler prespective */
-            const message = `property ${p.getName()} of ${nameOfContainer} is invalid. maps, and sets are not allowed`
-            opts.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return undefined;
-        }
-        if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME){
-            // TODO: load complex data type
-            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a complex data type`);
-            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
-        }
-
-        // map key and value validation
-        // key validation
-        const typeArgs = appeared_t.getTypeArguments();
-        const key_true_t = getTrueType(typeArgs[0]);
-        const val_true_t = getTrueType(typeArgs[1]);
-        if(!key_true_t.isString() &&  key_true_t.isNumber()){
-            const message = `invalid key data type for map ${p.getName()} only string or number is allowed`
-            opts.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return undefined;
-        }
-
-        // value validation
-        if(val_true_t.isString() && !val_true_t.isNumber() && !val_true_t.isBoolean && !val_true_t.isClassOrInterface() && !val_true_t.isIntersection()){
-            const message = `invalid value type for map ${p.getName()} only (string, number, boolean, class, interface, intersection is allowed`
-            opts.logger.err(message);
-            errors.push(helpers.createLoadError(message));
-            return undefined;
-        }
-
-        // identify if it is a complex map
-        if(val_true_t.isClassOrInterface()){
-            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex map`);
-            //TODO LOAD complex map
-            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
-        }else{
-            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as  map`);
-            //TODO LOAD complex map
-            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
-        }
-    }
-
-    if(true_t.isArray()){
-        const appeared_t = true_t.getArrayElementType();
-        if(!appeared_t){
+    if(appeared_t.isArray()){
+        const element_appeared_t = appeared_t.getArrayElementType();
+        if(!element_appeared_t){
             const message = `unable to identify data type array element for property ${p.getName()} of ${nameOfContainer}`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
             return undefined;
         }
-        const element_t = getTrueType(appeared_t);
+        const element_t = getPropertyTrueType(containerDeclaration, containerType, element_appeared_t);
         // arrays of any are not allowed
-        if(!element_t.isAny()){
+        if(element_t.isAny()){
             const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, any is not allowed`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
@@ -680,7 +921,7 @@ function createPropertyDataType(containerType: Type,
         }
 
         // array of arrays are not allowed
-        if(!element_t.isArray()){
+        if(element_t.isArray()){
             const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, array of arrays is not allowed`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
@@ -688,9 +929,17 @@ function createPropertyDataType(containerType: Type,
         }
 
         // basic type is cool
-        if(element_t.isString() && element_t.isNumber() && element_t.isBoolean()){
+        if(element_t.isString() || element_t.isNumber() || helpers.isBoolean(element_t)){
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple array`);
-            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+            return new property_SimpleArrayDataType(
+                                            element_appeared_t,
+                                            new helpers.typerEx(element_t),
+                                            typer,
+                                            appeared_t,
+                                            containerType,
+                                            containerDeclaration,
+                                            p,
+                                            opts);
         }
 
 
@@ -705,11 +954,104 @@ function createPropertyDataType(containerType: Type,
             }
 
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex array`);
-            return {} as modeltypes.AnyAdlPropertyDataTypeModel;
+            const complexArray = new property_ComplexArrayDataType(
+                                            element_appeared_t,
+                                            new helpers.typerEx(element_t),
+                                            typer,
+                                            appeared_t,
+                                            containerType,
+                                            containerDeclaration,
+                                            p,
+                                            _apiTypeModelCreator,
+                                            opts);
+            if(!complexArray.load(errors))  return undefined;
+                return complexArray;
+        }
+        // it is an array that we failed to process
+        const message = `failed to process array ${p.getName()} of ${nameOfContainer}`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return undefined;
+    }
+
+    if(true_t.isClassOrInterface() || true_t.isIntersection()){
+        const dataTypeName = true_t.getSymbolOrThrow().getName();
+        if(dataTypeName == "Map" || dataTypeName == "Set"){ /*array<T> appearts to behave exactly like an array from compiler prespective */
+            const message = `property ${p.getName()} of ${nameOfContainer} is invalid. maps, and sets are not allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+        if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME){
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a complex data type`);
+            const complexPropertyDataType =  new property_ComplexDataType(typer,
+                                          appeared_t,
+                                          containerType,
+                                          containerDeclaration,
+                                          p,
+                                          _apiTypeModelCreator,
+                                          opts);
+
+            if(!complexPropertyDataType.load(errors))  return undefined;
+            return complexPropertyDataType;
+        }
+
+        // map key and value validation
+        // key validation
+        const typeArgs = appeared_t.getTypeArguments();
+        const key_appeared_t = typeArgs[0];
+        const value_appeared_t = typeArgs[1];
+        const key_true_t = getPropertyTrueType(containerDeclaration, containerType, key_appeared_t);
+        const val_true_t = getPropertyTrueType(containerDeclaration, containerType, value_appeared_t);
+        if(!key_true_t.isString() &&  key_true_t.isNumber()){
+            const message = `invalid key data type for map ${p.getName()} only string or number is allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // value validation
+        if(!val_true_t.isString() && !val_true_t.isNumber() && !helpers.isBoolean(val_true_t) && !val_true_t.isClassOrInterface() && !val_true_t.isIntersection()){
+            const message = `invalid value type for map ${p.getName()} only (string, number, boolean, class, interface, intersection is allowed`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
+        // identify if it is a complex map
+        if(!val_true_t.isClassOrInterface()){
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple map`);
+            return new property_SimpleMapDataType(
+                   key_true_t,
+                   new helpers.typerEx(key_appeared_t),
+                   val_true_t,
+                   new helpers.typerEx(value_appeared_t),
+                   typer,
+                   appeared_t,
+                   containerType,
+                   containerDeclaration,
+                   p,
+                   opts);
+        }else{
+            opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex map`);
+            const complexMap = new property_ComplexMapDataType(
+                   key_true_t,
+                   new helpers.typerEx(key_appeared_t),
+                   val_true_t,
+                   new helpers.typerEx(value_appeared_t),
+                   typer,
+                   appeared_t,
+                   containerType,
+                   containerDeclaration,
+                   p,
+                   _apiTypeModelCreator,
+                   opts);
+            if(!complexMap.load(errors))  return undefined;
+            return complexMap;
         }
     }
 
-    const message = `unable to identify data type property ${p.getName()} of ${nameOfContainer}`
+    const message = `unable to identify data type for property ${p.getName()} of ${nameOfContainer}`
     opts.logger.err(message);
     errors.push(helpers.createLoadError(message));
     return undefined;

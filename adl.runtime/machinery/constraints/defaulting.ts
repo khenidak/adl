@@ -19,19 +19,32 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
 
         // set default value
         if(leveledTyped[context.propertyName] == undefined){
-            leveledTyped[context.propertyName] = context.ConstraintArgs[0];
-            return;
+            if(p.DataTypeName == "string") {
+                leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
+                return;
+            }
+
+            if(p.DataTypeName == "number"){
+                leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0]);
+                return;
+            }
+
+            if(p.DataTypeName == "boolean"){
+                leveledTyped[context.propertyName] = Boolean(context.ConstraintArgs[0]);
+                return;
+            }
         }
 
         if(p.DataTypeName == "string" && leveledTyped[context.propertyName] == ""){
-            leveledTyped[context.propertyName] = context.ConstraintArgs[0] as string;
+            leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
             return;
         }
 
         if(p.DataTypeName == "number" && leveledTyped[context.propertyName] == 0){
-            leveledTyped[context.propertyName] = context.ConstraintArgs[0] as number;
+            leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0] as number);
             return;
         }
+        // boolean has to be set if the property is not undefined.
     }
 }
 
