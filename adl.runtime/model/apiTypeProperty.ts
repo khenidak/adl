@@ -77,28 +77,16 @@ class property_constraint implements modeltypes.ConstraintModel{
 
 export class type_property{
     private _property_data_type_model: modeltypes.AnyAdlPropertyDataTypeModel;
+    private _name: string | undefined; // cached name
     get Name(): string{
-        return this.p.getName();
+        if(this._name != undefined) return this._name;
+        this._name = this.p.getName();
+
+        return this._name;
     }
 
-    get MapKeyDataTypeName(): string{
-        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
-            return this._property_data_type_model.KeyDataTypeName;
-
-        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
-            return this._property_data_type_model.KeyDataTypeName;
-
-        throw new Error(`property ${this.Name} is not a map`);
-    }
-
-    get MapValueDataTypeName(): string{
-        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
-            return this._property_data_type_model.ValueDataTypeName;
-
-        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
-            return this._property_data_type_model.ValueComplexDataTypeName;
-
-        throw new Error(`property ${this.Name} is not a map`);
+    get DataTypeModel(): modeltypes.AnyAdlPropertyDataTypeModel{
+        return this._property_data_type_model;
     }
 
     get DataTypeName():string{
@@ -141,7 +129,7 @@ export class type_property{
 
     // only valid for properties that are either `complex` or `array of complex` or `complex map`
     // if model to be serialized this needs to return undefined.
-    get ComplexDataType(): modeltypes.ApiTypeModel{
+    getComplexDataTypeOrThrow(): modeltypes.ApiTypeModel{
 
         if(modeltypes.isPropertyComplexDataType(this._property_data_type_model))
             return this._property_data_type_model.ComplexDataTypeModel;
@@ -210,6 +198,26 @@ export class type_property{
                 private containerDeclaration: ClassDeclaration| InterfaceDeclaration,
                 private p: PropertySignature | PropertyDeclaration,
                 private _apiTypeModelCreator: apiTypeModelCreator){
+    }
+
+    getMapKeyDataTypeNameOrThrow(): string{
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyDataTypeName;
+
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.KeyDataTypeName;
+
+        throw new Error(`property ${this.Name} is not a map`);
+    }
+
+    getMapValueDataTypeNameOrThrow(): string{
+        if(modeltypes.isPropertSimpleMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueDataTypeName;
+
+        if(modeltypes.isPropertyComplexMapDataType(this._property_data_type_model))
+            return this._property_data_type_model.ValueComplexDataTypeName;
+
+        throw new Error(`property ${this.Name} is not a map`);
     }
 
 

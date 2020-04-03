@@ -85,9 +85,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         rootNormalized,
                         leveledNormalized ? leveledNormalized[propertyName] : undefined,
                         rootVersionedModel,
-                        versionedP.ComplexDataType,
+                        versionedP.getComplexDataTypeOrThrow(),
                         rootNormalizedModel,
-                        leveledNormalizedModel ? leveledNormalizedModel.getProperty(propertyName)?.ComplexDataType : undefined,
+                        leveledNormalizedModel ? leveledNormalizedModel.getProperty(propertyName)?.getComplexDataTypeOrThrow() : undefined,
                         versionName,
                         currentFieldDesc,
                         errors);
@@ -106,10 +106,10 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         // TODO: this will be changed as we model properties and property data type the right way
                         if(leveledNormalizedModel != undefined &&
                            leveledNormalizedModel.getProperty(propertyName) != undefined &&
-                           leveledNormalizedModel.getProperty(propertyName)?.ComplexDataType.getProperty(key) != undefined){
+                           leveledNormalizedModel.getProperty(propertyName)?.getComplexDataTypeOrThrow().getProperty(key) != undefined){
                            const leveldP = (leveledNormalizedModel as modeltypes.ApiTypeModel).getProperty(propertyName) as modeltypes.ApiTypePropertyModel;
-                           const leveledKeydP = leveldP.ComplexDataType.getProperty(key) as modeltypes.ApiTypePropertyModel;
-                           currentNormalizedModel = leveledKeydP.ComplexDataType;
+                           const leveledKeydP = leveldP.getComplexDataTypeOrThrow().getProperty(key) as modeltypes.ApiTypePropertyModel;
+                           currentNormalizedModel = leveledKeydP.getComplexDataTypeOrThrow();
                         }
 
                         this.run_convertion_constraints_versioned_normalized(
@@ -118,7 +118,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             rootNormalized,
                             leveledNormalizedValue,
                             rootVersionedModel,
-                            versionedP.ComplexDataType,
+                            versionedP.getComplexDataTypeOrThrow(),
                             rootNormalizedModel,
                             currentNormalizedModel,
                             versionName,
@@ -222,9 +222,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                 rootNormalized,
                                 leveledNormalized[propertyName][key],
                                 rootVersionedModel,
-                                versionedP.ComplexDataType,
+                                versionedP.getComplexDataTypeOrThrow(),
                                 rootNormalizedModel,
-                                normalizedP.ComplexDataType,
+                                normalizedP.getComplexDataTypeOrThrow(),
                                 versionName,
                                 walkField,
                                 errors);
@@ -239,9 +239,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         rootNormalized,
                         leveledNormalized[propertyName],
                         rootVersionedModel,
-                        versionedP.ComplexDataType,
+                        versionedP.getComplexDataTypeOrThrow(),
                         rootNormalizedModel,
-                        normalizedP.ComplexDataType,
+                        normalizedP.getComplexDataTypeOrThrow(),
                         versionName,
                         currentFieldDesc,
                         errors);
@@ -273,9 +273,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             rootNormalized,
                             leveledNormalized[propertyName][i],
                             rootVersionedModel,
-                            versionedP.ComplexDataType,
+                            versionedP.getComplexDataTypeOrThrow(),
                             rootNormalizedModel,
-                            normalizedP.ComplexDataType,
+                            normalizedP.getComplexDataTypeOrThrow(),
                             versionName,
                             indexedFieldDesc,
                             errors);
@@ -385,9 +385,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         rootNormalized,
                         (leveledNormalized && leveledNormalized[versionedP.Name])? leveledNormalized[versionedP.Name][key] : undefined,
                         rootVersionedModel,
-                        versionedP.ComplexDataType,
+                        versionedP.getComplexDataTypeOrThrow(),
                         rootNormalizedModel,
-                        leveledNormalizedModel ? leveledNormalizedModel.getProperty(versionedP.Name)?.ComplexDataType : undefined,
+                        leveledNormalizedModel ? leveledNormalizedModel.getProperty(versionedP.Name)?.getComplexDataTypeOrThrow() : undefined,
                         versionName,
                         currentFieldDesc,
                         errors);
@@ -402,9 +402,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     rootNormalized,
                     leveledNormalized ? leveledNormalized[versionedP.Name] : undefined,
                     rootVersionedModel,
-                    versionedP.ComplexDataType,
+                    versionedP.getComplexDataTypeOrThrow(),
                     rootNormalizedModel,
-                    leveledNormalizedModel ? leveledNormalizedModel.getProperty(versionedP.Name)?.ComplexDataType : undefined,
+                    leveledNormalizedModel ? leveledNormalizedModel.getProperty(versionedP.Name)?.getComplexDataTypeOrThrow() : undefined,
                     versionName,
                     currentFieldDesc,
                     errors);
@@ -470,8 +470,8 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 if(srcP.isMap()){
                     versioned[propertyName] = {};
                     // match data type for key
-                    if(srcP.MapKeyDataTypeName != tgtP.MapKeyDataTypeName){
-                        this.opts.logger.verbose(`${log_prefix} map${propertyName} has different keydatatype ${srcP.MapKeyDataTypeName}!=${tgtP.MapKeyDataTypeName}, ignoring`);
+                    if(srcP.getMapKeyDataTypeNameOrThrow() != tgtP.getMapKeyDataTypeNameOrThrow()){
+                        this.opts.logger.verbose(`${log_prefix} map${propertyName} has different keydatatype ${srcP.getMapKeyDataTypeNameOrThrow()}!=${tgtP.getMapKeyDataTypeNameOrThrow()}, ignoring`);
                         continue;
                     }
                     for(const key of Object.keys(normalized[propertyName])){
@@ -489,9 +489,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                 rootNormalized,
                                 normalized[propertyName][key],
                                 rootNormalizedModel,
-                                srcP.ComplexDataType,
+                                srcP.getComplexDataTypeOrThrow(),
                                 rootVersionedModel,
-                                tgtP.ComplexDataType,
+                                tgtP.getComplexDataTypeOrThrow(),
                                 versionName,
                                 walkField,
                                 errors);
@@ -508,9 +508,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         rootNormalized,
                         normalized[propertyName],
                         rootNormalizedModel,
-                        srcP.ComplexDataType,
+                        srcP.getComplexDataTypeOrThrow(),
                         rootVersionedModel,
-                        tgtP.ComplexDataType,
+                        tgtP.getComplexDataTypeOrThrow(),
                         versionName,
                         currentFieldDesc,
                         errors);
@@ -545,9 +545,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                 rootNormalized,
                                 normalized[propertyName][i],
                                 rootNormalizedModel,
-                                srcP.ComplexDataType,
+                                srcP.getComplexDataTypeOrThrow(),
                                 rootVersionedModel,
-                                tgtP.ComplexDataType,
+                                tgtP.getComplexDataTypeOrThrow(),
                                 versionName,
                                 indexedFieldDesc,
                                 errors);
@@ -629,7 +629,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             if(adltypes.isScalar(versioned[p.Name])){
                 if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                     this.opts.logger.verbose(`BuildMissingKeys can't find expected complex type[${p.Name}], instead a scalar was found, marking all keys as missing`);
-                    const model = p.ComplexDataType
+                    const model = p.getComplexDataTypeOrThrow()
                     for(const pp of model.Properties){
                         if(!pp.isRemoved && !pp.isOptional){
                             const propField = new adltypes.fieldDesc(pp.Name, currentFieldDesc);
@@ -643,7 +643,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             if(adltypes.isComplex(versioned[p.Name])){
                 if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                     // run for nested object
-                    this.buildMissingKeys(versioned[p.Name], p.ComplexDataType, currentFieldDesc, missingKeys);
+                    this.buildMissingKeys(versioned[p.Name], p.getComplexDataTypeOrThrow(), currentFieldDesc, missingKeys);
                     continue;
                 }
                 if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap){
@@ -652,10 +652,10 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                        const walkField = new adltypes.fieldDesc(key, currentFieldDesc)
                         if(adltypes.isComplex(versioned[p.Name][key])){
                             this.opts.logger.verbose(`BuildMissingKeys found expected complex map[${p.Name}] will follow the input complex object`);
-                            this.buildMissingKeys(versioned[p.Name][key], p.ComplexDataType, walkField, missingKeys);
+                            this.buildMissingKeys(versioned[p.Name][key], p.getComplexDataTypeOrThrow(), walkField, missingKeys);
                         }else{
                             this.opts.logger.verbose(`BuildMissingKeys found expected scalar map[${p}] marking all keys as missing`);
-                            const model = p.ComplexDataType
+                            const model = p.getComplexDataTypeOrThrow()
                             for(const pp of model.Properties){
                                 if(!pp.isRemoved && !pp.isOptional){
                                     const propField = new adltypes.fieldDesc(pp.Name, walkField);
@@ -676,7 +676,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         if(adltypes.isComplex(currentInput)){
                             const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
                             indexedFieldDesc.index = i;
-                            this.buildMissingKeys(currentInput, p.ComplexDataType, indexedFieldDesc, missingKeys);
+                            this.buildMissingKeys(currentInput, p.getComplexDataTypeOrThrow(), indexedFieldDesc, missingKeys);
                             continue;
                         }
                 }
@@ -705,7 +705,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap){
                             // walk the object
                             this.opts.logger.verbose(`BuildExtraKeys found expected complex map[${propertyName}] will follow the input complex object`);
-                            this.buildExtraKeys(currentVal, p.ComplexDataType, walkField, extraKeys);
+                            this.buildExtraKeys(currentVal, p.getComplexDataTypeOrThrow(), walkField, extraKeys);
                         }else{
                             // all keys here are considered extra
                             this.opts.logger.verbose(`BuildExtraKeys found scalar map[${propertyName}] but input is map of complex objects. will mark all keys as extra`);
@@ -733,7 +733,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                 if(adltypes.isComplex(versioned[propertyName])){
                     // run for nested object
-                    this.buildExtraKeys(versioned[propertyName], p.ComplexDataType, currentFieldDesc, extraKeys);
+                    this.buildExtraKeys(versioned[propertyName], p.getComplexDataTypeOrThrow(), currentFieldDesc, extraKeys);
                 }
                 continue;
             }
@@ -749,7 +749,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     // otherwise it just becomes an invalid (caught in validation).
                     if(adltypes.isComplex(currentInput)){
                         if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
-                            this.buildExtraKeys(currentInput, p.ComplexDataType, indexedFieldDesc, extraKeys);
+                            this.buildExtraKeys(currentInput, p.getComplexDataTypeOrThrow(), indexedFieldDesc, extraKeys);
                         }else{
                             this.opts.logger.verbose(`BuildExtraKeys keys found complex type in[${propertyName}${i}] expected scalar. will mark all keys as extra`)
                             for(const key of Object.keys(currentInput)){
@@ -806,7 +806,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             // complex + not undefined (we check because defaulting
             // may have choosen not to default it.
             if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
-                this.run_type_defaults(root, leveled[p.Name], rootApiTypeModel, p.ComplexDataType, currentFieldDesc, errors);
+                this.run_type_defaults(root, leveled[p.Name], rootApiTypeModel, p.getComplexDataTypeOrThrow(), currentFieldDesc, errors);
                 continue;
             }
 
@@ -815,7 +815,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
               for(const key of Object.keys(leveled[p.Name])){
                 const walkField = new adltypes.fieldDesc(key, currentFieldDesc);
                 if(leveled[p.Name] != undefined){
-                    this.run_type_defaults(root, leveled[p.Name][key], rootApiTypeModel, p.ComplexDataType, walkField, errors)
+                    this.run_type_defaults(root, leveled[p.Name][key], rootApiTypeModel, p.getComplexDataTypeOrThrow(), walkField, errors)
                 }
               }
             }
@@ -825,7 +825,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 for(let i =0; i < leveled[p.Name].length; i++){
                     const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
                     indexedFieldDesc.index = i;
-                    this.run_type_defaults(root, leveled[p.Name][i], rootApiTypeModel, p.ComplexDataType, indexedFieldDesc, errors);
+                    this.run_type_defaults(root, leveled[p.Name][i], rootApiTypeModel, p.getComplexDataTypeOrThrow(), indexedFieldDesc, errors);
                 }
             }
         }
@@ -955,13 +955,13 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         continue;
                     }
 
-                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.MapValueDataTypeName != (typeof leveled[p.Name][key])){
-                        errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Expected ${p.MapValueDataTypeName}`, walkField));
+                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapValueDataTypeNameOrThrow() != (typeof leveled[p.Name][key])){
+                        errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Expected ${p.getMapValueDataTypeNameOrThrow()}`, walkField));
                         continue;
                     }
 
-                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.MapKeyDataTypeName != (typeof key)){
-                        errors.push(machinerytypes.createValidationError(`key ${p.Name}/${key} is invalid. Expected ${p.MapValueDataTypeName}`, walkField));
+                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapKeyDataTypeNameOrThrow() != (typeof key)){
+                        errors.push(machinerytypes.createValidationError(`key ${p.Name}/${key} is invalid. Expected ${p.getMapValueDataTypeNameOrThrow()}`, walkField));
                         continue;
                     }
 
@@ -991,7 +991,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             existingRoot,
                             (existingLeveled && existingLeveled[p.Name]) ? existingLeveled[p.Name][key] : undefined,
                             rootApiTypeModel,
-                            (p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap) ? p.ComplexDataType : leveledApiTypeModel,
+                            (p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap) ? p.getComplexDataTypeOrThrow() : leveledApiTypeModel,
                             false);
                     }
 
@@ -1003,7 +1003,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             existingRoot,
                             (existingLeveled && existingLeveled[p.Name]) ? existingLeveled[p.Name][key] : undefined,
                             rootApiTypeModel,
-                            p.ComplexDataType,
+                            p.getComplexDataTypeOrThrow(),
                             walkField,
                             errors);
                         continue;
@@ -1019,7 +1019,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     existingRoot,
                     (existingLeveled) ? existingLeveled[p.Name]: undefined,
                     rootApiTypeModel,
-                    p.ComplexDataType,
+                    p.getComplexDataTypeOrThrow(),
                     currentFieldDesc,
                     errors);
                 continue;
@@ -1045,7 +1045,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             existingRoot,
                             (existingLeveled && existingLeveled[p.Name].length > i ) ? existingLeveled[p.Name][i]: undefined,
                             rootApiTypeModel,
-                            p.ComplexDataType,
+                            p.getComplexDataTypeOrThrow(),
                             indexedFieldDesc,
                             errors);
 
@@ -1067,7 +1067,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                     existingRoot,
                                     (existingLeveled && existingLeveled[p.Name].length > i ) ? existingLeveled[p.Name][i]: undefined,
                                     rootApiTypeModel,
-                                    p.ComplexDataType,
+                                    p.getComplexDataTypeOrThrow(),
                                     false);
                         }
                     }
@@ -1230,7 +1230,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                 const subModel = {};
                 (<any>instance)[p.Name] = subModel;
-                this.build_instance(subModel as adltypes.Normalized, p.ComplexDataType, currentFieldDesc);
+                this.build_instance(subModel as adltypes.Normalized, p.getComplexDataTypeOrThrow(), currentFieldDesc);
                 continue;
             }
 
@@ -1252,7 +1252,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
                         const elementModel = {};
                         (<any>instance)[p.Name][i] = elementModel;
-                        this.build_instance((elementModel as adltypes.Normalized), p.ComplexDataType, indexedFieldDesc);
+                        this.build_instance((elementModel as adltypes.Normalized), p.getComplexDataTypeOrThrow(), indexedFieldDesc);
                         continue;
                     }
                 }

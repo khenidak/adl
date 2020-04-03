@@ -204,7 +204,13 @@ export function isPropertyComplexMapDataType(model: AnyAdlPropertyDataTypeModel)
 // each mode reflects enum, complex, array etc.this will make
 // it alot easier to model and operate on it
 export interface ApiTypePropertyModel extends loadableObject{
+    // property name
     readonly Name: string;
+
+    // model represents the data type
+    // the model is surfaced to property via the rest of the function
+    readonly DataTypeModel: AnyAdlPropertyDataTypeModel;
+
     // primitive data type name or complex type name
     // eg
     // `name: string` // will report string
@@ -224,7 +230,6 @@ export interface ApiTypePropertyModel extends loadableObject{
     // property is optional
     readonly isOptional: boolean;
     // returns the complex data type for property if available;
-    readonly ComplexDataType: ApiTypeModel;
     // don't run auto conversion on type
     readonly isManaullyConverted: boolean;
     // returns true if the type is aliased via DataType<Name>;
@@ -236,17 +241,17 @@ export interface ApiTypePropertyModel extends loadableObject{
     // returns the list of possible enum values.
     // empty if it is not of type enum;
     readonly EnumValues: any[];
-    // for properties that are defined as map
-    readonly MapKeyDataTypeName: string;
-    // for properties that are degined as
-    readonly MapValueDataTypeName: string;
+
     readonly MapKeyConstraints: Array<ConstraintModel>;
     readonly MapValueConstraints: Array<ConstraintModel>;
 
+    getMapKeyDataTypeNameOrThrow(): string;
+    getMapValueDataTypeNameOrThrow():string;
 
     getDefaultingConstraints(): Array<ConstraintModel>;
     getValidationConstraints(): Array<ConstraintModel>;
     getConversionConstraints(): Array<ConstraintModel>;
+    getComplexDataTypeOrThrow(): ApiTypeModel;
 
     getArrayElementValidationConstraints():Array<ConstraintModel>;
 

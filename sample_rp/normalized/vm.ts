@@ -39,7 +39,10 @@ interface ImageReference{
 interface DataDisk {
     diskId: armtypes.ArmResourceId; // note: custom type
     diskSize?: number & adltypes.DefaultValue<160>;
+    //defaulted boolean
     isUltra?: boolean & adltypes.DefaultValue<true>;
+    // undefauled boolean
+    isSSD: boolean;
 }
 
 interface HWProfile {

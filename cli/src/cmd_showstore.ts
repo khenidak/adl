@@ -39,7 +39,7 @@ export class showStoreAction extends CommandLineAction {
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexArray ||
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexMap){
                     console.log(prefix + " "+ "++" + prop.DataTypeName)
-                    this.printApiTypeModel(prefix + " ", prop.ComplexDataType)
+                    this.printApiTypeModel(prefix + " ", prop.getComplexDataTypeOrThrow())
             }
 
             if(prop.isMap()){
