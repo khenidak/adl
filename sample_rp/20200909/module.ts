@@ -37,5 +37,5 @@ export type four_resource_20200909 = adltypes.CustomApiType<'resource_four', 're
 
 // any imperative code needs to be exported at the package level
 export { ResourceFourVersioner_20200909 } from './resource_four'
-export { ResourceTwo20200909 } from './resource_two'
+export { ResourceTwo20200909, ResourceTwo20200909Versioner } from './resource_two'
 

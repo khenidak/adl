@@ -29,16 +29,13 @@ export class ArmNormalizedResource<props extends adltypes.Normalized>{
 // Resources that needs imperative normalizer must use
 // use this one
 // Note: we relay on auto conversion for arm core (for now).
-export class ArmnNormalizer<props extends adltypes.Normalized,
-                            normalizer extends adltypes.Normalizer<props>>{
+export class ArmNormalizer<props> implements adltypes.Normalizer<ArmNormalizedResource<props>>{
     Default(obj: ArmNormalizedResource<props>, errors: adltypes.errorList) : void {
-        const actual:normalizer = {} as normalizer;
-        actual.Default(obj.properties, errors);
+        // no-op
     }
 
     Validate (old: ArmNormalizedResource<props> | undefined, newObject: ArmNormalizedResource<props>, errors: adltypes.errorList) : void{
-        const actual:normalizer = {} as normalizer;
-        actual.Validate(old ? old.properties : undefined, newObject.properties, errors);
+        //no-op
     }
 }
 
@@ -58,18 +55,15 @@ export class ArmVersionedResource<versionedProps extends adltypes.Versioned>
 }
 
 export class ArmVersioner<normalizedProps extends adltypes.Normalized,
-                          versionedProps extends adltypes.Versioned,
-                          versioner extends adltypes.Versioner<normalizedProps, versionedProps>>
-                                    implements adltypes.Versioner<ArmNormalizedResource<normalizedProps>, ArmNormalizedResource<versionedProps>>{
+                          versionedProps extends adltypes.Versioned>
+                          implements adltypes.Versioner<ArmNormalizedResource<normalizedProps>, ArmNormalizedResource<versionedProps>>{
     // normalize performs conversion from versioned api type => normalized api type
     Normalize(versioned: ArmVersionedResource<versionedProps>, normalized: ArmNormalizedResource<normalizedProps>, errors: adltypes.errorList) : void{
-                const actual: versioner = {} as versioner;
-                actual.Normalize(versioned.properties, normalized.properties, errors);
-            }
+        //no-op
+    }
 
     // convert performs conversion from normalized api type => versioned api type
     Convert(normalized: ArmNormalizedResource<normalizedProps> , versioned: ArmVersionedResource<versionedProps>, errors: adltypes.errorList): void{
-                const actual: versioner = {} as versioner;
-                actual.Convert(normalized.properties, versioned.properties, errors);
+        //no-op
     }
 }

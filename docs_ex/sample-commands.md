@@ -29,6 +29,16 @@
 --source=./docs_ex/sample-rp-sample-data/vm_2020-09-09.json
 ```
 
+## normalize a type that has an imperative versioner
+```
+./cairo machinery \
+--api-name=sample_rp \
+--action=normalize  \
+--api-version="2020-09-09" \
+--versioned-api-type-name="resource-two" \
+--source=./docs_ex/sample-rp-sample-data/resource_two_2020-09-09.json
+```
+
 
 # denormalize
 
@@ -39,6 +49,16 @@
 --target-api-version=2020-09-09 \
 --target-versioned-api-type-name=virtualmachine \
 --source=./docs_ex/sample-rp-sample-data/vm-normalized.json
+```
+
+## denoromalize a type that has an imperative versioner
+```
+./cairo machinery \
+--api-name=sample_rp \
+--action=denormalize \
+--target-api-version=2020-09-09 \
+--target-versioned-api-type-name=resource-two \
+--source=./docs_ex/sample-rp-sample-data/resource_two_normalized.json
 ```
 
 # convert

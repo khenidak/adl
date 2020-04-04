@@ -16,20 +16,30 @@ class ResourceTwo{
     prop2: string;
 }
 
-class ResourceTwoVersioner implements adltypes.Versioner<normalized.ResourceTwoProps, ResourceTwo>{
+// because we work with arm wrapped resources, our versioner need to work with them as well
+export class ResourceTwo20200909Versioner implements adltypes.Versioner<armtypes.ArmNormalizedResource<normalized.ResourceTwoProps>, armtypes.ArmVersionedResource<ResourceTwo>>{
 
-    Normalize(versioned: ResourceTwo, normalized: normalized.ResourceTwoProps, errors: adltypes.errorList) :void{
-        normalized.prop1 = versioned.prop1;
-        normalized.prop2 = versioned.prop2 + `custom value added by versioner`;
+    Normalize(versioned: armtypes.ArmVersionedResource<ResourceTwo>, normalized: armtypes.ArmNormalizedResource<normalized.ResourceTwoProps>, errors: adltypes.errorList) :void{
+        // call arm versioner, since we expect it to also work on its envelop
+        const armVersioner = new armtypes.ArmVersioner<normalized.ResourceTwoProps, ResourceTwo>();
+        armVersioner.Normalize(versioned, normalized, errors);
+        if(errors.length >0) return;
+
+
+        normalized.properties.prop1 = versioned.properties.prop1;
+        normalized.properties.prop2 = versioned.properties.prop2 + `custom value added by impertive versioner`;
     }
 
-    Convert(normalized: normalized.ResourceTwoProps, versioned:ResourceTwo, errors: adltypes.errorList):void{
-        versioned.prop1 = normalized.prop1;
-        versioned.prop2 = normalized.prop2;
+    Convert(normalized: armtypes.ArmNormalizedResource<normalized.ResourceTwoProps>, versioned: armtypes.ArmVersionedResource<ResourceTwo>, errors: adltypes.errorList):void{
+        // call arm versioner since we expect it to also work with its envelop
+        const armVersioner = new armtypes.ArmVersioner<normalized.ResourceTwoProps, ResourceTwo>();
+        armVersioner.Convert(normalized, versioned, errors);
+        if(errors.length >0) return;
+
+        versioned.properties.prop1 = normalized.properties.prop1;
+        versioned.properties.prop2 = normalized.properties.prop2;
     }
 }
 
 // for this resource we want to envelop it in ARM. so we are doing this:
 export type ResourceTwo20200909 = armtypes.ArmVersionedResource<ResourceTwo>;
-//again wrap the versioner
-export type ResourceTwo20200909Versioner = armtypes.ArmVersioner<normalized.ResourceTwoProps, ResourceTwo, ResourceTwoVersioner>

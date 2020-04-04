@@ -34,10 +34,3 @@ export * from './vm'
 export * from './resource_two'
 export * from './resource_three'
 export * from './resource_four'
-
-
-// TODO: remove when loadable runtime feat is done
-// we need that because the load logic verify that the library loaded has the
-// versioner
-export * from '@azure-tools/arm.adl'
-

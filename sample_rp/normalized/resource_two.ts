@@ -16,24 +16,35 @@ export class ResourceTwoProps{
                  adltypes.MustMatch<'^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$'>;
 }
 
-
-class ResourceTwoPropsNormalizer implements adltypes.Normalizer<ResourceTwoProps>{
+// because we work with wrapped resouce our normalizer needs to work with wrapped resources as well
+export class RespourceTwoNormalizer implements adltypes.Normalizer<armtypes.ArmNormalizedResource<ResourceTwoProps>>{
     // *** THE BELOW IS AN EXAMPLE OF CUSTOM VALIDATOR AND DEFAULTER. THIS IS NOT THE NORMAL
     // *** APIS DESIGNER WILL NEED TO DO THAT ONLY IF THEY NEED CUSTOM BEHAVIOR. IN OTHER
     // *** WORDS IF THE ANNOTATIONS (INTERSECTIONS) ARE NOT PROVIDING THE BEHAVIOR NEEDED.
-    Default(obj: ResourceTwoProps, errors: adltypes.errorList) {
-        if(obj.prop1 == 0)
-                obj.prop1 = 9999;
+    Default(obj: armtypes.ArmNormalizedResource<ResourceTwoProps>, errors: adltypes.errorList) {
+        // call arm normalizer on the envelop
+        const armNormalizer = new armtypes.ArmNormalizer<ResourceTwoProps>();
+        armNormalizer.Default(obj, errors);
+        if(errors.length > 0) return;
+
+        if(obj.properties.prop1 == 0)
+                obj.properties.prop1 = 200;
     }
 
-    Validate (old: ResourceTwoProps | undefined, newObject: ResourceTwoProps,  errors: adltypes.errorList) {
+    Validate (old: armtypes.ArmNormalizedResource<ResourceTwoProps> | undefined, newObject: armtypes.ArmNormalizedResource<ResourceTwoProps>,  errors: adltypes.errorList) {
+        // call arm normalizer on the envelop
+        const armNormalizer = new armtypes.ArmNormalizer<ResourceTwoProps>();
+        armNormalizer.Validate(old, newObject, errors);
+        if(errors.length > 0) return;
+
+
         // if we are in update mode we are only intersted in new
         // if not then just do the old
 
 
         // though we can express the below with annotation, we need
         // to allow apis designer to express validation as required
-        if(newObject.prop1 == 123 && newObject.prop2 === "ValueWeDontLike"){
+        if(newObject.properties.prop1 == 123 && newObject.properties.prop2 === "ValueWeDontLike"){
 
             // note any error returned from Validate is always
             // validated by calling Validate() on error object itself.
@@ -48,5 +59,3 @@ class ResourceTwoPropsNormalizer implements adltypes.Normalizer<ResourceTwoProps
 }
 //wrap the properties in envelop
 export type ResourceTwoNormalized  = armtypes.ArmNormalizedResource<ResourceTwoProps>;
-// wrap the normalizer
-export type RespourceTwoNormalizer = armtypes.ArmnNormalizer<ResourceTwoProps, ResourceTwoPropsNormalizer>;
