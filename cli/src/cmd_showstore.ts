@@ -8,10 +8,25 @@ import * as adlruntime from '@azure-tools/adl.runtime'
  * and use it as a store, to red api definitions from
  */
 
-
+/* @khenidak
+* How does this should look like
+* ./cairo list (showes evertything)
+* ./cairo list --show-docs (shows the documentation - if any - for each model)
+* ./cairo list --only-apis (shows api spec)
+* ./cairo list -- only-apis --only--versions (shows apis + versions)
+* ~ normalized
+* ~ versioned type
+* ~ filtering
+* ./cairo list <whatever> --filter="api=x"
+* ./cairo list <whatever> --filter="api=x,api=y,version=x,normalized=y"
+* sadly rush stack is badly documented. so the best source of understanding different
+* flags go to
+* https://github.com/microsoft/rushstack/blob/master/libraries/ts-command-line/src/test/CommandLineParameter.test.ts
+*/
 export class showStoreAction extends CommandLineAction {
     private _scope: CommandLineChoiceParameter;
-    private _filter: CommandLineStringParameter;
+    private _filter: CommandLineStringParameter; /* TODO */
+    private _show_docs: CommandLineFlagParameter;
 
     private getPropertiesConstraintsAsText(p: adlruntime.ApiTypePropertyModel): string{
         let constraintsAsText = ""
@@ -24,6 +39,18 @@ export class showStoreAction extends CommandLineAction {
         constraintsAsText = `enum${p.EnumValues}`;
         return constraintsAsText;
     }
+    private printDocs(prefix: string, docs: adlruntime.ApiJsDoc | undefined){
+        if(docs == undefined || this._show_docs.value == false) return;
+        console.log(` ${prefix}docs:`)
+        for(const l of docs.text.split("\n"))
+            console.log(`  ${prefix}${l}`);
+
+        console.log(` ${prefix}tags:`)
+        for(const [k,v] of docs.tags){
+            console.log(`  ${prefix}${k}: ${v}`)
+        }
+    }
+
     private printModel(scope: string, model: adlruntime.ApiModel):void{
         // Print api model name
         var prefix = "";
@@ -38,10 +65,9 @@ export class showStoreAction extends CommandLineAction {
             if(prop.DataTypeKind == adlruntime.PropertyDataTypeKind.Complex ||
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexArray ||
                 prop.DataTypeKind == adlruntime.PropertyDataTypeKind.ComplexMap){
-                    console.log(prefix + " "+ "++" + prop.DataTypeName)
+                    this.printDocs(` ${prefix}`, prop.Docs);
                     this.printApiTypeModel(prefix + " ", prop.getComplexDataTypeOrThrow())
             }
-
             if(prop.isMap()){
                 let constraintAsText = ""
                 for(const c of prop.MapKeyConstraints){
@@ -75,9 +101,9 @@ export class showStoreAction extends CommandLineAction {
                 constraintsAsText = "> " + constraintsAsText;
             }
             console.log(`${prefix} + Type: ${normalizedType.Name} ${constraintsAsText}`);
+            this.printDocs(` ${prefix}`, normalizedType.Docs);
             prefix = "    ";
             this.printApiTypeModel(prefix, normalizedType);
-
        }
     }
 
@@ -87,10 +113,11 @@ export class showStoreAction extends CommandLineAction {
             // api versions
             console.log(`${prefix} Versions:`);
             for(let apiVersion of apiVersions){
-            prefix = "  ";
-            console.log(`${prefix} + api-version: ${apiVersion.Name}`);
-            this.printVersionedTypes(scope, apiVersion.VersionedTypes);
-        }
+                prefix = "  ";
+                console.log(`${prefix} + api-version: ${apiVersion.Name}`);
+                this.printDocs(`  ${prefix}`, apiVersion.Docs);
+                this.printVersionedTypes(scope, apiVersion.VersionedTypes);
+            }
     }
 
     private printVersionedTypes(scope: string, versionedTypes: Iterable<adlruntime.VersionedApiTypeModel>):void{
@@ -109,6 +136,7 @@ export class showStoreAction extends CommandLineAction {
             }
 
             console.log(`${prefix} Type:${versionedType.Name} ${constraintsAsText}`);
+            this.printDocs(` ${prefix}`, versionedType.Docs);
             prefix = "     ";
             this.printApiTypeModel(prefix, versionedType);
         }
@@ -150,13 +178,20 @@ export class showStoreAction extends CommandLineAction {
             required: false,
     });
 
-        //todo
-        this._filter = this.defineStringParameter({
+    //TODO
+    this._filter = this.defineStringParameter({
       parameterLongName: '--filter',
             argumentName: 'PATH_STRING_STDIN',
       parameterShortName: '-f',
       description: 'filter TODO',
             required: false,
     });
+
+    this._show_docs = this. defineFlagParameter({
+          parameterLongName: '--show-docs',
+          parameterShortName: '-d',
+          description: 'display docs',
+          environmentVariable: 'ENV_DOCS'
+        });
   }
 }

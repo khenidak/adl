@@ -1,23 +1,27 @@
 import { Project, TypeAliasDeclaration, TypeReferenceNode } from 'ts-morph';
 
-// ApiVersionInfo describes a version of the api
-// Each version is represented by a ts file.
-// each type in the version is represented by an exported type alias
-// in the form of:
-// export type MyApIType = my fancy interface & my other fancy thing
-
 
 import * as adltypes from '@azure-tools/adl.types';
 import * as modeltypes from './model.types';
 import * as helpers from './helpers'
 
 import { versioned_type } from './apiType'
+import { makeApiModelDoc } from './apijsdoc'
 
+// describes an api-version, contains a list of all api-versions
 export class api_version{
     private _typeInfos = new Map<string, modeltypes.VersionedApiTypeModel>();
 
+    private _Docs: modeltypes.ApiJsDoc | undefined;
+
     private _moduleName: string = "";
     private _versionName: string ="";
+
+    get Docs(): modeltypes.ApiJsDoc | undefined{
+        return this._Docs;
+    }
+
+
     get Name(): string{
         return this._versionName;
     }
@@ -39,7 +43,11 @@ export class api_version{
         return this._typeInfos.get(name);
     }
 
-    constructor(private project: Project, private rootPath: string, private tp: helpers.typerEx, private apiModel: modeltypes.ApiModel){}
+    constructor(private project: Project,
+                private rootPath: string,
+                private tp: helpers.typerEx,
+                private tad: TypeAliasDeclaration,
+                private apiModel: modeltypes.ApiModel){}
 
     load(options:modeltypes.apiProcessingOptions, errors: adltypes.errorList): boolean{
         const mod = this.tp.MatchIfInheritsSingle(adltypes.CONSTRAINT_NAME_MODULENAME);
@@ -74,6 +82,9 @@ export class api_version{
             options.logger.err(message);
             return false;
         }
+
+        // docs
+        this._Docs = makeApiModelDoc(this.tad, options, errors);
 
         var typeAliases = moduleFile.getTypeAliases().filter(ta => ta.isExported());
         let result = true;

@@ -4,6 +4,8 @@ import * as adltypes from '@azure-tools/adl.types';
 import * as modeltypes from './model.types';
 import * as helpers from './helpers';
 
+import { makeApiModelDoc } from './apijsdoc'
+
 
 // allows the property loading logic to create an api type model
 // without having to create reference to concerete types
@@ -78,6 +80,11 @@ class property_constraint implements modeltypes.ConstraintModel{
 export class type_property{
     private _property_data_type_model: modeltypes.AnyAdlPropertyDataTypeModel;
     private _name: string | undefined; // cached name
+
+    get Docs(): modeltypes.ApiJsDoc | undefined{
+        return this._property_data_type_model.Docs;
+    }
+
     get Name(): string{
         if(this._name != undefined) return this._name;
         this._name = this.p.getName();
@@ -297,6 +304,14 @@ class property_DataType implements modeltypes.PropertyDataType{
                 protected p: PropertySignature | PropertyDeclaration,
                 protected opts: modeltypes.apiProcessingOptions){
 
+    }
+
+    // documentation on property
+    get Docs (): modeltypes.ApiJsDoc | undefined{
+        if(this._cache.has("Docs")) return this._cache.get("docs");
+        const parsedDocs = makeApiModelDoc(this.p, this.opts, new adltypes.errorList() /* we don't expect errors in doc loading */);
+        this._cache.set("Docs", parsedDocs);
+        return this._cache.get("Docs");
     }
 
     // identify DataTypeKind by interrogating the appeared type of this property

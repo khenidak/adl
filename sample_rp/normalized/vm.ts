@@ -2,8 +2,15 @@ import * as adltypes from '@azure-tools/adl.types'
 import * as armtypes from '@azure-tools/arm.adl'
 
 interface VirtualMachineProps{
-    vmId : string &
-           adltypes.ReadOnly;
+    /**
+    *  this is a property documentation, i can here describe the property for user facing doc. I can also
+    *  provide tags. the farmework can help in asserting that certain tags are exposed. make sure that docs
+    *  have no spelling mistakes.. etc ..etc
+    *
+    *  @prop_tag1 because we are using jsdoc, we can use tags. those are also exposed to whoever consumes the model
+    *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
+    */
+    vmId : string & adltypes.ReadOnly;
 
     hardwareProfile: HWProfile;
     storageProfile: ImageReference;
@@ -19,6 +26,15 @@ interface VirtualMachineProps{
     v2Prop?: string &
              adltypes.DefaultValue<'defaulted  declartively'>;
 
+    /**
+    *  this is another property documentation, i can here describe the property for user facing doc. I can also
+    *  provide tags. the farmework can help in asserting that certain tags are exposed. make sure that docs
+    *  have no spelling mistakes. note in my doc, i don't say data type, version name, optionality, validation
+    *  those all are enumerated by the framework and surfaced to the model
+    *
+    *  @prop_tag1 because we are using jsdoc, we can use tags. those are also exposed to whoever consumes the model
+    *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
+    */
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
 }
 

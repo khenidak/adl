@@ -70,7 +70,37 @@ export function createLoadError(message:string): adltypes.error{
     return e;
 }
 /////////////////////////////////////////////////
-////////////////////////////////////////////////
+///////////////////////////////////////////////
+/* What is typer?
+ * typer is a utlity class that allow us to process various complixiest in a simple way
+ * for eample it allow us to unpack x & y & z (where z is a & b & c)
+ * it helps finding declarations based on what they inhirit inthe above declartion
+ * so if c was defined as c implements someinterface (or c extends someinterface).
+ * and we want to find any declaration that has someinterface as a baseclass/basetype
+ * typer will be your best friend.
+ *
+ * or if you want to find all declaration that does not inhirit from somebase class
+ * then typer is also your best friend.each model in our models hang to a single typer
+ * except property where things are a bit more complex for example
+ *
+ * property: scalar type => one typer
+ *
+ * property: complex type=> one typer
+ *
+ * property: array => two typers one for the array as a whole and one for
+ * element definition that allow us to do something like `property: string & MustMatch<xxx>[]`
+ *
+ * property: map => 3 typers
+ * one for the map itself
+ * one for the key definition
+ * one for the value definition
+ * that allow us to define a propoerty like this
+ * property: Map<string & MaxLength<10>, string & MaxLength<20> & MustMatch<xxx>> & MaxLength<50>
+ * the above validates the map as
+ * max keys 50
+ * max length of each key is 10
+ * max length of each value is 20 and each value needs to match an arbitrary regexp
+ */
 export class typerEx{
     private _Ts:Array<Type> = Array<Type>();
 
@@ -78,7 +108,6 @@ export class typerEx{
     // the requested s.
     private getSubClassOf(s:string, t: Type):Type | undefined{
         const baseTypes = t.getSymbolOrThrow().getDeclaredType().getBaseTypes(); //t.getBaseTypes();
-        //console.log(`${EscapedName(t.getSymbolOrThrow().getDeclaredType())}  ${EscapedName(t)}==  ${baseTypes.length} ${t.getBaseTypes().length}`);
         for(let tt of baseTypes){
             if(EscapedName(tt) == s || this.getSubClassOf(s, tt) != undefined){
                 return tt as Type;

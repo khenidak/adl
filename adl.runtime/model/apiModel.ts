@@ -86,7 +86,7 @@ export class api_model implements modeltypes.ApiModel{
                     }
 
                     const tp: helpers.typerEx = new helpers.typerEx(typeNode.getType());
-                    const versionModel: api_version = new api_version(this.project, this.rootPath, tp, this);
+                    const versionModel: api_version = new api_version(this.project, this.rootPath, tp, ta, this);
                     const loaded = versionModel.load(options, errors);
 
                     if(!loaded) {

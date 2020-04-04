@@ -5,7 +5,7 @@ import * as modeltypes from './model.types';
 import * as helpers from './helpers'
 
 import { type_property } from './apiTypeProperty'
-
+import { makeApiModelDoc } from './apijsdoc'
 // !!!!
 // because we can not get the realized args of super class (example  sub<A,B>extends super<a, v, constatC>)
 // any body who choose to extend the meta types of ADL CustomNormalizedApiType and CustomApiType. must provide
@@ -16,7 +16,7 @@ function createApiTypeModel(t: Type): modeltypes.ApiTypeModel{
     return new api_type(t);
 }
 
-// represents a constraint
+// represents a constraint - unify with property constraints
 export class apitype_constraint implements modeltypes.ConstraintModel{
     get Name(): string{
         return this.name;
@@ -39,6 +39,11 @@ export class api_type implements modeltypes.ApiTypeModel{
     private _properties = new Map<string, modeltypes.ApiTypePropertyModel>();
     private _constraints: Array<modeltypes.ConstraintModel> | undefined = undefined;
     protected _name:string;
+    protected _Docs: modeltypes.ApiJsDoc | undefined;
+
+    get Docs(): modeltypes.ApiJsDoc | undefined{
+        return this._Docs;
+    }
 
     get Name():string{return this._name;}
 
@@ -84,9 +89,26 @@ export class api_type implements modeltypes.ApiTypeModel{
             throw new Error(`api_type was not loaded with a type to parse`);
         // set the name
         this._name = helpers.EscapedName(this._t)
-    // set the property
-        const loaded = this.addPropertiesFor(options, errors, this._t, this._t.getSymbolOrThrow().getDeclaredType());
-        return loaded;
+        // set the properties
+        const s = this._t.getSymbolOrThrow();
+        const declared_t = s.getDeclaredType();
+
+        /* if we ever need docs on inner types (not as part of property)
+         * just a stand alone docs. then this needs to be uncommented*/
+        /*
+        // docs
+        var decl: ClassDeclaration | InterfaceDeclaration;
+        // we don't check for invalid decl here because, the type is loaded
+        // and check as part of property loading etc.
+        if(this._t.isInterface()){
+            decl = (s.getDeclarations()[0] as InterfaceDeclaration);
+        }else{
+         decl = (s.getDeclarations()[0] as ClassDeclaration);
+        }
+
+        this._Docs = makeApiModelDoc(decl, options, errors);
+        */
+        return  this.addPropertiesFor(options, errors, this._t, declared_t);
     }
 
     // usedT is how it used for example something<props>
@@ -218,6 +240,10 @@ export class normalized_type extends api_type implements modeltypes.NormalizedAp
         const name_ta = typeDef.getTypeArguments()[0];
         this._name = helpers.quotelessString(name_ta.getText());
 
+        // docs
+        this._Docs = makeApiModelDoc(this.tad, options, errors);
+
+
         // add properties
         return this.addPropertiesFor(options, errors, ta[1]/* container type*/, props /*container declaration*/);
     }
@@ -279,7 +305,7 @@ export class versioned_type extends api_type implements modeltypes.VersionedApiT
 
         // set name
         this._name =  helpers.quotelessString(ta[1].getText());
-        
+
         const s = ta[3].getSymbol();
         if(!s){
             const message = `unable to identify properties type for VersionedApiType ${ta[3].getText()} failed to get symbol`;
@@ -302,6 +328,9 @@ export class versioned_type extends api_type implements modeltypes.VersionedApiT
             errors.push(helpers.createLoadError(message));
             return false;
         }
+
+        // docs
+        this._Docs = makeApiModelDoc(this.tad, options, errors);
 
         // add properties
         return this.addPropertiesFor(options, errors, ta[3] /* container type*/, typeProps /*container declaration*/);

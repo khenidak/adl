@@ -37,6 +37,7 @@ export interface ApiModel{
 // represents an api version.
 export interface ApiVersionModel extends loadableObject{
     readonly Name: string;
+    readonly Docs: ApiJsDoc | undefined;
     readonly ModuleName: string;
     readonly VersionedTypes: Iterable<VersionedApiTypeModel>;
     getVersionedType(name: string): VersionedApiTypeModel | undefined;
@@ -45,6 +46,8 @@ export interface ApiVersionModel extends loadableObject{
 // represents an api type be it versioned or normalized
 export interface ApiTypeModel extends loadableObject{
     readonly Name: string;
+    readonly Docs: ApiJsDoc | undefined;
+
     readonly Properties: Iterable<ApiTypePropertyModel>;
     readonly Constraints:Array<ConstraintModel>;
 
@@ -89,6 +92,7 @@ export interface PropertyDataType{
     readonly DefaultingConstraints: Array<ConstraintModel>;
     readonly ValidationConstraints: Array<ConstraintModel>;
     readonly ConversionConstraints: Array<ConstraintModel>;
+    readonly Docs: ApiJsDoc | undefined;
 
     hasRemovedConstraint(): boolean
     hasNoAutoConvertConstraint():boolean;
@@ -211,6 +215,9 @@ export interface ApiTypePropertyModel extends loadableObject{
     // the model is surfaced to property via the rest of the function
     readonly DataTypeModel: AnyAdlPropertyDataTypeModel;
 
+    // documentation on property
+    readonly Docs: ApiJsDoc | undefined;
+
     // primitive data type name or complex type name
     // eg
     // `name: string` // will report string
@@ -259,6 +266,15 @@ export interface ApiTypePropertyModel extends loadableObject{
     isMap(): boolean;
 }
 
+// presents the documentation
+// note: we are not using loadable object because
+// failure to load doc is not considered a total failure
+// for loading an api
+export interface ApiJsDoc{
+    readonly text:string;
+    readonly tags: Map<string, string>;
+}
+
 
 // type guards
 export type AnyAdlModel = ApiModel |  NormalizedApiTypeModel | ApiVersionModel | VersionedApiTypeModel | ApiTypeModel | ApiTypePropertyModel;
@@ -269,8 +285,10 @@ export function isVersionedApiTypeModel(model: AnyAdlModel): model is VersionedA
 export function isApiTypeModel(model: AnyAdlModel): model is ApiTypeModel { return isNormalizedApiTypeModel(model) || isApiVersionModel(model)};
 export function isApiTypePropertyModel(model: AnyAdlModel): model is ApiTypePropertyModel{ return (model as ApiTypePropertyModel).Constraints !== undefined;}
 
-// api manager - aka store
 
+
+
+// api manager - aka store
 const manipulationSettings = {
  indentationText: IndentationText.TwoSpaces,
  insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,

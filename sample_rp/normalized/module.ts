@@ -16,8 +16,16 @@ import { ResourceFourProps } from './resource_four'
 // virtual machine normalized type. it does not need any imperative
 // defaulting or validation, so we are not defining any
 //TODO: when https://github.com/dsherret/ts-morph/issues/793 is fixed
-export type VirtualMachine = adltypes.NormalizedApiType<'vm', VirtualMachineNormalized>;
 
+
+/**
+ * normalized also supports documentation just like any other api type in the system.
+ *
+ *  @tag1 we also support tags, tags can provide valua key/value information
+ *  @tag2 we can also enforce that certain tags are provided.
+ *  @tag3 we can also enforce rules such as spelling/grammer check
+ */
+export type VirtualMachine = adltypes.NormalizedApiType<'vm', VirtualMachineNormalized>;
 
 //resource two normalized. That one require imparive and declarative work
 export type ResourceTwo = adltypes.CustomNormalizedApiType<'resource_two', ResourceTwoNormalized, RespourceTwoNormalizer>;
