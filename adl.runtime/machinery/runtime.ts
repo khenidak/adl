@@ -1086,11 +1086,14 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         const existingNormalizedTyped = adltypes.isComplex(existingPayload) ? existingPayload : JSON.parse(existingPayload);
         const rootField = adltypes.getRootFieldDesc();
 
-        this.validate(normalizedTyped, normalizedTyped, existingNormalizedTyped, existingNormalizedTyped, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
 
-        this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
-        const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
-        imperative_normalizer.Validate(undefined, normalizedTyped, errors);
+        if(normalizedApiTypeModel.NormalizerName != adltypes.AUTO_NORMALIZER_NAME){
+            this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+            imperative_normalizer.Validate(undefined, normalizedTyped, errors);
+        }
+
+        this.validate(normalizedTyped, normalizedTyped, existingNormalizedTyped, existingNormalizedTyped, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
     }
 
     validate_normalized_oncreate(payload: string | any, apiName: string, normalizedApiTypeName: string, errors: adltypes.errorList):void{
@@ -1103,14 +1106,13 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         const normalizedTyped = adltypes.isComplex(payload) ? payload : JSON.parse(payload);
         const rootField = adltypes.getRootFieldDesc();
 
+        if(normalizedApiTypeModel.NormalizerName != adltypes.AUTO_NORMALIZER_NAME){
+            this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+            imperative_normalizer.Validate(undefined, normalizedTyped, errors);
+        }
+
         this.validate(normalizedTyped, normalizedTyped, undefined /* on create we won't have existing*/, undefined, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
-
-        if(normalizedApiTypeModel.NormalizerName == adltypes.AUTO_NORMALIZER_NAME)
-            return;
-
-        this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
-        const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
-        imperative_normalizer.Validate(undefined, normalizedTyped, errors);
     }
 
     // normalize: normalizes payload as the following:
