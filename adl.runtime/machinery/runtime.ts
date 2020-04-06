@@ -1083,6 +1083,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         const normalizedTyped = adltypes.isComplex(payload) ? payload : JSON.parse(payload);
         const existingNormalizedTyped = adltypes.isComplex(existingPayload) ? existingPayload : JSON.parse(existingPayload);
         const rootField = adltypes.getRootFieldDesc();
+        this.validate(normalizedTyped, normalizedTyped, existingNormalizedTyped, existingNormalizedTyped, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
 
         if(normalizedApiTypeModel.NormalizerName== adltypes.AUTO_NORMALIZER_NAME) return;
 
@@ -1100,7 +1101,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
         const normalizedTyped = adltypes.isComplex(payload) ? payload : JSON.parse(payload);
         const rootField = adltypes.getRootFieldDesc();
-
+        this.validate(normalizedTyped, normalizedTyped, undefined /* on create we won't have existing*/, undefined, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
         if(normalizedApiTypeModel.NormalizerName== adltypes.AUTO_NORMALIZER_NAME) return;
 
         this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);

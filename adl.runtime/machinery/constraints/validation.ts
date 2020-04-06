@@ -4,6 +4,53 @@ import * as modeltypes from '../../model/module'
 
 
 
+export class MinLengthImpl implements machinerytypes.ValidationConstraintImpl{
+    Run(
+        context: machinerytypes.ConstraintExecContext,
+        rootTyped: any,
+        leveledTyped: any,
+        existingRootTyped: any | undefined,
+        existingLeveledTyped: any | undefined,
+        rootApiTypeModel: modeltypes.ApiTypeModel,
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
+
+       context.opts.logger.verbose(`calling MaxLengthImpl for ${context.propertyName}`);
+       const propVal = leveledTyped[context.propertyName];
+       if(propVal == undefined) return true;
+
+       if((propVal as string).length < (context.ConstraintArgs[0] as number)){
+        context.errors.push(machinerytypes.createValidationError(`value ${propVal} length is out of range expected min length is ${context.ConstraintArgs[0]}`, context.fieldPath));
+       }
+
+        return true;
+    }
+}
+
+export class MaxLengthImpl implements machinerytypes.ValidationConstraintImpl{
+    Run(
+        context: machinerytypes.ConstraintExecContext,
+        rootTyped: any,
+        leveledTyped: any,
+        existingRootTyped: any | undefined,
+        existingLeveledTyped: any | undefined,
+        rootApiTypeModel: modeltypes.ApiTypeModel,
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
+
+        context.opts.logger.verbose(`calling MaxLengthImpl for ${context.propertyName}`);
+       const propVal = leveledTyped[context.propertyName];
+       if(propVal == undefined) return true;
+
+            if((propVal as string).length > (context.ConstraintArgs[0] as number)){
+        context.errors.push(machinerytypes.createValidationError(`value ${propVal} length is out of range expected max length is ${context.ConstraintArgs[0]}`, context.fieldPath));
+       }
+
+        return true;
+    }
+}
+
+
 export class MaximumImpl implements machinerytypes.ValidationConstraintImpl{
     Run(
         context: machinerytypes.ConstraintExecContext,

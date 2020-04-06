@@ -26,7 +26,7 @@
             "version": "version field value"
         },
         "v1Prop": 9,
-        "vmId": "string-here"
+        "vmId": "str"
     },
     "resourceGroup": "my resource group",
     "tags": {
