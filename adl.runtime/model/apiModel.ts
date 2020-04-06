@@ -58,16 +58,16 @@ export class api_model implements modeltypes.ApiModel{
 
     hasVersioner(name: string): boolean{
         if(this._imported == undefined) throw new Error("attempt was made to interact wth loadable spec before it finishes loading");
-            return this.apimachinery.hasVersioner(name) ||  this._imported[name] != undefined;
+            return this._imported[name] != undefined;
     }
 
     hasNormalizer(name: string): boolean{
         if(this._imported == undefined) throw new Error("attempt was made to interact wth loadable spec before it finishes loading");
-            return this.apimachinery.hasNormalizer(name) || this._imported[name] != undefined;
+            return  this._imported[name] != undefined;
     }
 
     createSpecInstance(name:string): any | undefined{
-        if(!this.hasVersioner(name)) return undefined;
+        if(this._imported == undefined) throw new Error("attempt was made to interact wth loadable spec before it finishes loading");
             return new this._imported[name]();
     }
 

@@ -13,14 +13,6 @@ export class RuntimeCreator implements adlruntime.RuntimeCreator{
         const runtimeDef =  new adlruntime.machineryLoadableRuntime(ARM_RUNTIME_NAME);
         // add swagger generator
         runtimeDef.generators.set("arm.swagger", new armSwaggerGen.armSwaggerGenerator());
-
-
-        // add arm custom versioner
-        runtimeDef.versioners.set("ArmVersioner" /*type name of versioner */, armtypes /*containing module */);
-
-        // add arm custom normalizer
-        runtimeDef.normalizers.set("ArmNormalizer" /*type name of versioner */, armtypes /*containing module */);
-
         return runtimeDef;
     }
 }

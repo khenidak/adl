@@ -24,11 +24,6 @@ export class machineryLoadableRuntime{
     // conversion constraints implementation
     readonly conversionImplementations: Map<string, ConversionConstraintImpl> = new Map<string, ConversionConstraintImpl>();
 
-    // custom shared versioners, typically used when there is a shared envelop across multiple spec
-    readonly versioners: Map<string, any> = new Map<string/*type name*/, any /* containing module */ >();
-
-    // custom shared versioners, typically used when there is a shared envelop across multiple spec
-    readonly normalizers: Map<string, any> = new Map<string/*type name*/, any /* containing module */ >();
     constructor(private _name: string){}
 }
 
@@ -342,12 +337,4 @@ export interface ApiMachinery{
 
     // creates a runtime instance for store
     createRuntime(store: ApiManager): ApiRuntime;
-
-    // normalizers and versioners
-    hasVersioner(name:string):boolean;
-    hasNormalizer(name:string):boolean;
-    activateVersioner(name:string): any;
-    activateNormalizer(name:string): any;
 }
-
-

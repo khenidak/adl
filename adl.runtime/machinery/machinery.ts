@@ -18,12 +18,6 @@ export class api_machinery implements machinerytypes.ApiMachinery{
 
     private _generators = new Map<string, machinerytypes.Generator>();
 
-    // runtime versioners, shared. any points to the module contain them
-    private _versioners = new Map<string, any>();
-
-    // runtime normalizer, shared. any points to the module contain them
-    private _normalizers = new Map<string, any>();
-
     private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{
         if(this._runtimes.has(r.Name))
                 throw new Error(`runtime ${r.Name} has been already registered`);
@@ -54,36 +48,6 @@ export class api_machinery implements machinerytypes.ApiMachinery{
                 throw new Error(`runtime ${r.Name} registering an already registered generator ${k}`);
 
             this._generators.set(k,v);
-        }
-
-        for(let [k,v] of r.versioners){
-            if(this._versioners.has(k))
-                throw new Error(`runtime ${r.Name} registering an already registered versioner ${k}`);
-
-            // check if its actually in the module, saves alot of agony
-            // as runtime error will just say it does not exist
-            if(v[k] == undefined || (new v[k]()) == undefined)
-                throw new Error(`runtime ${r.Name} exposes a versioner ${k} that is not found in the supplied module`);
-
-            if(!adltypes.isVersioner((new v[k]())))
-                 throw new Error(`runtime ${r.Name} attempting to register versioner ${k} which does not implement versioner logic`);
-
-            this._versioners.set(k,v);
-        }
-
-        for(let [k,v] of r.normalizers){
-            if(this._normalizers.has(k))
-                throw new Error(`runtime ${r.Name} registering an already registered normalizer ${k}`);
-
-            // check if its actually in the module, saves alot of agony
-            // as runtime error will just say it does not exist
-            if(v[k] == undefined || (new v[k]()) == undefined)
-                throw new Error(`runtime ${r.Name} exposes a normalizer ${k} that is not found in the supplied module`)
-
-            if(!adltypes.isNormalizer((new v[k]())))
-                 throw new Error(`runtime ${r.Name} attempting to register normalizer ${k} which does not implement normalization logic`);
-
-            this._normalizers.set(k,v);
         }
 
         this._runtimes.set(r.Name, r);
@@ -232,26 +196,6 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         const generator = this._generators.get(name) as machinerytypes.Generator;
 
         generator.generate(apiManager, this.opts, config);
-    }
-
-    hasVersioner(name:string):boolean{
-        return this._versioners.has(name);
-    }
-    hasNormalizer(name:string):boolean{
-        return this._normalizers.has(name);
-    }
-
-    activateVersioner(name:string): any{
-       if(!this.hasVersioner(name)) throw Error(`versioner ${name} is not registered`);
-
-       const container_module = this._versioners.get(name);
-       return new container_module[name]();
-    }
-
-    activateNormalizer(name:string): any{
-       if(!this.hasNormalizer(name)) throw Error(`normalizer ${name} is not registered`);
-       const container_module = this._normalizers.get(name);
-       return new container_module[name]();
     }
 
     // create runtime for an entire store
