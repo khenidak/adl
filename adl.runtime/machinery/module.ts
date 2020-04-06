@@ -1,4 +1,4 @@
 
 export * from './machinery.types'
-export * from './machinery'
+export * from './createMachinery'
 

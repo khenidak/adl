@@ -28,7 +28,8 @@ export interface Versioned{
 }
 
 export interface Normalizer<N extends Normalized> {
- Default(obj: N, errors: errorList) : void;
+    // imperative defaulting logic, called upon defaulting an api type
+    Default(obj: N, errors: errorList) : void;
     // Validate is called with
     // (undefined, new, errorlist) in case of object creation
     // (old, new, update) in case of object update
@@ -48,6 +49,14 @@ export interface Versioner<N extends Normalized,V extends Versioned>{
     Convert(normalized: N, versioned: V,errors: errorList): void;
 }
 
+
+// type guards
+export function isNormalizer(o:any): o is Normalizer<Normalized>{
+    return o != undefined && (o as Normalizer<Normalized>).Default != undefined && (o as Normalizer<Normalized>).Validate != undefined;
+}
+export function isVersioner(o:any): o is Versioner<Normalized, Versioned>{
+    return o != undefined && (o as Versioner<Normalized, Versioned>).Normalize != undefined && (o as Versioner<Normalized, Versioned>).Convert != undefined;
+}
 
 /* error type is the only type defined at the global leve
  * because it is used in conversion and validation

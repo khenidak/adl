@@ -67,41 +67,13 @@ export class adlCliParser extends CommandLineParser {
         // wire up log level
         ctx.opts.logger.logLevel = adlruntime.apiProcessingLogLevel[this._log_level.value as string];
 
-        ctx.store = new adlruntime.ApiManager();
-        ctx.machinery = new adlruntime.apiMachinery(ctx.opts);
+        // create the machinery using our opts
+        const machinery = adlruntime.CreateMachinery(ctx.opts);
+        // keep it in context
+        ctx.machinery = machinery
+        // use it to create an api manager (store)
+        ctx.store = machinery.createApiManager();
 
-        const loadApis = this._pre_load_api.values
-        // typicall there would be a configuration file for cairo
-        // where we set the preloaded apis in it. TODO
-        if(loadApis.length == 0){
-            //TODO: for demo purposes, we are loading a sample
-            // in a typical scneario, user will connect to rpaas
-            // endpoint to load the data.
-            ctx.opts.logger.info(`auto loading sample_rp apis`);
-            await ctx.store.addApi(ctx.opts,
-                                "sample_rp",
-                                "/home/khenidak/go/src/github.com/khenidak/adl/sample_rp" );
-        }else{
-            // if there are values provided in command line then load from there
-            for(const api of loadApis){
-                const message = `expected loadable apis to be in form of 'name=<name>+path=<path>'`;
-
-                // no error handling here
-                const defParts = api.split("+");
-                let apiName:string = "";
-                let apiPath:string = "";
-                for(const defPart of defParts)
-                {
-                    const varParts = defPart.split("=");
-                    if(varParts.length != 2 || (varParts[0] !== "name" && varParts[0] !=="path")) throw new Error(message);
-                    if(varParts[0] == "name")  apiName = varParts[1];
-                    if(varParts[0] == "path") apiPath = varParts[1];
-                }
-                ctx.opts.logger.info(`preloading apis ${apiName} from ${apiPath}`);
-                await ctx.store.addApi(ctx.opts, apiName, apiPath);
-                ctx.opts.logger.verbose(`loaded apis ${apiName} from ${apiPath}`);
-            }
-        }
 
         // loadable runtimes
         const runtimes = this._pre_load_runtime.values;
@@ -136,8 +108,41 @@ export class adlCliParser extends CommandLineParser {
         }
 
 
-        this.ctx.machineryRuntime = this.ctx.machinery.createRuntime(this.ctx.store);
+        const loadApis = this._pre_load_api.values
+        // typicall there would be a configuration file for cairo
+        // where we set the preloaded apis in it. TODO
+        if(loadApis.length == 0){
+            //TODO: for demo purposes, we are loading a sample
+            // in a typical scneario, user will connect to rpaas
+            // endpoint to load the data.
+            ctx.opts.logger.info(`auto loading sample_rp apis`);
+            await ctx.store.addApi(ctx.opts,
+                                "sample_rp",
+                                "/home/khenidak/go/src/github.com/khenidak/adl/sample_rp" );
+        }else{
+            // if there are values provided in command line then load from there
+            for(const api of loadApis){
+                const message = `expected loadable apis to be in form of 'name=<name>+path=<path>'`;
 
+                // no error handling here
+                const defParts = api.split("+");
+                let apiName:string = "";
+                let apiPath:string = "";
+                for(const defPart of defParts)
+                {
+                    const varParts = defPart.split("=");
+                    if(varParts.length != 2 || (varParts[0] !== "name" && varParts[0] !=="path")) throw new Error(message);
+                    if(varParts[0] == "name")  apiName = varParts[1];
+                    if(varParts[0] == "path") apiPath = varParts[1];
+                }
+                ctx.opts.logger.info(`preloading apis ${apiName} from ${apiPath}`);
+                await ctx.store.addApi(ctx.opts, apiName, apiPath);
+                ctx.opts.logger.verbose(`loaded apis ${apiName} from ${apiPath}`);
+            }
+        }
+
+        // a runtime wrapping our store into context
+        this.ctx.machineryRuntime = machinery.createRuntime(this.ctx.store);
         return super.onExecute();
   }
 }

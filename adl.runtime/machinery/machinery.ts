@@ -7,9 +7,9 @@ import * as runtime from  './runtime'
 import * as conformance from './conformance/module'
 import * as constraints from './constraints/module'
 
+import { api_manager } from './apimanager'
 
-
-export class apiMachinery implements machinerytypes.Machinery{
+export class api_machinery implements machinerytypes.ApiMachinery{
     private _runtimes = new Map<string, machinerytypes.machineryLoadableRuntime>();
 
     private _defaulting_implementations = new Map<string, machinerytypes.DefaultingConstraintImpl>();
@@ -17,6 +17,12 @@ export class apiMachinery implements machinerytypes.Machinery{
     private _conversion_implementations = new Map<string, machinerytypes.ConversionConstraintImpl>();
 
     private _generators = new Map<string, machinerytypes.Generator>();
+
+    // runtime versioners, shared. any points to the module contain them
+    private _versioners = new Map<string, any>();
+
+    // runtime normalizer, shared. any points to the module contain them
+    private _normalizers = new Map<string, any>();
 
     private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{
         if(this._runtimes.has(r.Name))
@@ -50,6 +56,35 @@ export class apiMachinery implements machinerytypes.Machinery{
             this._generators.set(k,v);
         }
 
+        for(let [k,v] of r.versioners){
+            if(this._versioners.has(k))
+                throw new Error(`runtime ${r.Name} registering an already registered versioner ${k}`);
+
+            // check if its actually in the module, saves alot of agony
+            // as runtime error will just say it does not exist
+            if(v[k] == undefined || (new v[k]()) == undefined)
+                throw new Error(`runtime ${r.Name} exposes a versioner ${k} that is not found in the supplied module`);
+
+            if(!adltypes.isVersioner((new v[k]())))
+                 throw new Error(`runtime ${r.Name} attempting to register versioner ${k} which does not implement versioner logic`);
+
+            this._versioners.set(k,v);
+        }
+
+        for(let [k,v] of r.normalizers){
+            if(this._normalizers.has(k))
+                throw new Error(`runtime ${r.Name} registering an already registered normalizer ${k}`);
+
+            // check if its actually in the module, saves alot of agony
+            // as runtime error will just say it does not exist
+            if(v[k] == undefined || (new v[k]()) == undefined)
+                throw new Error(`runtime ${r.Name} exposes a normalizer ${k} that is not found in the supplied module`)
+
+            if(!adltypes.isNormalizer((new v[k]())))
+                 throw new Error(`runtime ${r.Name} attempting to register normalizer ${k} which does not implement normalization logic`);
+
+            this._normalizers.set(k,v);
+        }
 
         this._runtimes.set(r.Name, r);
         this.opts.logger.info(`adl machinery registered runtime: ${r.Name}`);
@@ -87,6 +122,7 @@ export class apiMachinery implements machinerytypes.Machinery{
     }
 
     constructor(private opts: modeltypes.apiProcessingOptions){
+            // load core runtime
             const coreRuntime = this.buildAdlRuntime();
             this.registerRuntime(coreRuntime);
     }
@@ -190,7 +226,7 @@ export class apiMachinery implements machinerytypes.Machinery{
        return this._generators.has(name);
     }
 
-    runGeneratorFor(apiManager: modeltypes.ApiManager, name:string, config: any | undefined):void{
+    runGeneratorFor(apiManager: machinerytypes.ApiManager, name:string, config: any | undefined):void{
         if(!this.hasGenerator(name)) throw new Error(`generator ${name} does not exist`);
 
         const generator = this._generators.get(name) as machinerytypes.Generator;
@@ -198,8 +234,32 @@ export class apiMachinery implements machinerytypes.Machinery{
         generator.generate(apiManager, this.opts, config);
     }
 
+    hasVersioner(name:string):boolean{
+        return this._versioners.has(name);
+    }
+    hasNormalizer(name:string):boolean{
+        return this._normalizers.has(name);
+    }
+
+    activateVersioner(name:string): any{
+       if(!this.hasVersioner(name)) throw Error(`versioner ${name} is not registered`);
+
+       const container_module = this._versioners.get(name);
+       return new container_module[name]();
+    }
+
+    activateNormalizer(name:string): any{
+       if(!this.hasNormalizer(name)) throw Error(`normalizer ${name} is not registered`);
+       const container_module = this._normalizers.get(name);
+       return new container_module[name]();
+    }
+
     // create runtime for an entire store
-    createRuntime(store: modeltypes.ApiManager): machinerytypes.ApiRuntime{
+    createRuntime(store: machinerytypes.ApiManager): machinerytypes.ApiRuntime{
         return new runtime.apiRuntime(store,this, this.opts);
+    }
+
+    createApiManager(): machinerytypes.ApiManager{
+        return new api_manager(this);
     }
 }

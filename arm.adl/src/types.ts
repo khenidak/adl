@@ -37,6 +37,7 @@ export class ArmNormalizer<props> implements adltypes.Normalizer<ArmNormalizedRe
     Validate (old: ArmNormalizedResource<props> | undefined, newObject: ArmNormalizedResource<props>, errors: adltypes.errorList) : void{
         //no-op
     }
+    constructor(){}
 }
 
 // Arm envelop for versioned resource.
@@ -66,4 +67,5 @@ export class ArmVersioner<normalizedProps extends adltypes.Normalized,
     Convert(normalized: ArmNormalizedResource<normalizedProps> , versioned: ArmVersionedResource<versionedProps>, errors: adltypes.errorList): void{
         //no-op
     }
+    constructor(){}
 }

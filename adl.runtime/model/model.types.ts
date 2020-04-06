@@ -285,9 +285,6 @@ export function isVersionedApiTypeModel(model: AnyAdlModel): model is VersionedA
 export function isApiTypeModel(model: AnyAdlModel): model is ApiTypeModel { return isNormalizedApiTypeModel(model) || isApiVersionModel(model)};
 export function isApiTypePropertyModel(model: AnyAdlModel): model is ApiTypePropertyModel{ return (model as ApiTypePropertyModel).Constraints !== undefined;}
 
-
-
-
 // api manager - aka store
 const manipulationSettings = {
  indentationText: IndentationText.TwoSpaces,
@@ -301,91 +298,6 @@ function parseJsonc(text: string) {
         .replace(/],(\s*?)\}/gm, ']$1}')
         .replace(/},(\s*?)\}/gm, '}$1}'));
 }
-
-
-
-export class ApiManager {
-    private _apiModels = new Map<string, ApiModel>();
-
-    get ApiModels(): Iterable<ApiModel> {
-        var infos = new Array<ApiModel>();
-
-        for(let [k,v] of this._apiModels)
-            infos.push(v);
-
-        return infos;
-    }
-
-    hasApiInfo(name: string): boolean{
-        return this._apiModels.has(name);
-    }
-
-    getApiInfo(name: string): ApiModel | undefined{
-        return this._apiModels.get(name);
-    }
-
- constructor() {}
-
-
-    async addApi(options:apiProcessingOptions, apiName: string, projectDirectory: string): Promise<adltypes.errorList>{
-        const errors = new adltypes.errorList();
-
-        const apiModel = await this.loadApi(options, errors, apiName, projectDirectory);
-
-        // an error during load?
-        if(!apiModel) return errors;
-
-        this._apiModels.set(apiName, apiModel);
-        return errors;
-    }
-
-    async loadApi(options: apiProcessingOptions, errors:adltypes.errorList, apiName: string, projectDirectory: string): Promise<ApiModel | undefined> {
-        projectDirectory = resolve(projectDirectory);
-
-        if (!isDirectory(projectDirectory)){
-            const e = helpers.createLoadError(`Invalid Path ${projectDirectory} for ADL project`);
-            errors.push(e);
-            return undefined;
-            }
-
-        const configFile = resolve(projectDirectory, 'tsconfig.json');
-            if (!isFile(configFile)) {
-            const e = helpers.createLoadError(`No tsconfig at ${configFile}`);
-            errors.push(e);
-            return undefined;
-        }
-
-        const pkgFile = resolve(projectDirectory, 'package.json');
-  if (!isFile(pkgFile)) {
-                const e = helpers.createLoadError(`No packagejson at ${pkgFile}`);
-                errors.push(e);
-                return undefined;
-        }
-
-        const project = new Project({ tsConfigFilePath: configFile, manipulationSettings });
-        const loadedFiles = new Set<string>();
-
-        // create the api info
-  for (const each of project.getSourceFiles()) {
-            const sourceFile = each.getFilePath();
-   const content = await readFile(sourceFile);
-   const rPath = relative(projectDirectory, sourceFile);
-   loadedFiles.add(rPath);
-   project.createSourceFile(rPath, content);
-  }
-
-        const apiModel = new api_model(apiName, projectDirectory, project, loadedFiles);
-
-        apiModel.tsconfig = parseJsonc((await readFile(configFile)));
-        apiModel.package = parseJsonc((await readFile(pkgFile)));
-
-        const loaded = await apiModel.load(options, errors);
-        if(!loaded) return undefined;
-
-        return apiModel;
-    }
-}
-
 
 export enum apiProcessingLogLevel{
     none,

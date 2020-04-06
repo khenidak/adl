@@ -2,6 +2,8 @@ import { Project, SourceFile, TypeReferenceNode } from 'ts-morph';
 
 import * as adltypes from '@azure-tools/adl.types';
 import * as modeltypes from './model.types';
+import * as machinerytypes from '../machinery/machinery.types'
+
 import * as helpers from './helpers'
 
 import { api_version } from './apiVersion';
@@ -36,7 +38,7 @@ export class api_model implements modeltypes.ApiModel{
         return infos;
     }
 
-    constructor(private name:string, private rootPath: string, private project:Project, private loadedFiles: Set<string>){}
+    constructor(private name:string, private rootPath: string, private project:Project, private loadedFiles: Set<string>, private apimachinery: machinerytypes.ApiMachinery){}
 
     getVersion(name: string): modeltypes.ApiVersionModel | undefined{
         return this._apiVersionModels.get(name);
@@ -56,16 +58,16 @@ export class api_model implements modeltypes.ApiModel{
 
     hasVersioner(name: string): boolean{
         if(this._imported == undefined) throw new Error("attempt was made to interact wth loadable spec before it finishes loading");
-            return this._imported[name] != undefined;
+            return this.apimachinery.hasVersioner(name) ||  this._imported[name] != undefined;
     }
 
     hasNormalizer(name: string): boolean{
         if(this._imported == undefined) throw new Error("attempt was made to interact wth loadable spec before it finishes loading");
-            return this._imported[name] != undefined;
+            return this.apimachinery.hasNormalizer(name) || this._imported[name] != undefined;
     }
 
     createSpecInstance(name:string): any | undefined{
-            if(!this.hasVersioner(name)) return undefined;
+        if(!this.hasVersioner(name)) return undefined;
             return new this._imported[name]();
     }
 
@@ -195,8 +197,8 @@ export class api_model implements modeltypes.ApiModel{
         }
         // same goes for imperative normalizer
         for(const normalizedType of this.NormalizedTypes){
-                // auto is always there
-                if(normalizedType.NormalizerName == adltypes.AUTO_NORMALIZER_NAME)
+            // auto is always there
+            if(normalizedType.NormalizerName == adltypes.AUTO_NORMALIZER_NAME)
                 continue;
 
             if(!this.hasNormalizer(normalizedType.NormalizerName)){

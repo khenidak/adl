@@ -40,7 +40,7 @@ export class InvalidApiTypeModel extends Error {
 }
 
 export class apiRuntime implements machinerytypes.ApiRuntime{
-    constructor(private store: modeltypes.ApiManager, private machinery: machinerytypes.Machinery, private opts: modeltypes.apiProcessingOptions){}
+    constructor(private store: machinerytypes.ApiManager, private machinery: machinerytypes.ApiMachinery, private opts: modeltypes.apiProcessingOptions){}
 
 
     private run_convertion_constraints_versioned_normalized(
@@ -332,8 +332,14 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         // run the imperative versioner
         if(versionedTypeModel.VersionerName == adltypes.AUTO_VERSIONER_NAME) return;
 
-        this.opts.logger.verbose(`custom versioner:${versionedTypeModel.VersionerName} is normalizing ${apiModel.Name}/${versionName}/${versionedTypeModel.Name} => ${normalizedApiTypeModel.Name}`);
-        const imperative_versioner = apiModel.createSpecInstance(versionedTypeModel.VersionerName) as adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        let imperative_versioner: adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        if(this.machinery.hasVersioner(versionedTypeModel.VersionerName)){
+            this.opts.logger.info(`runtime versioner:${versionedTypeModel.VersionerName} normalize ${apiModel.Name}/${versionName}/${versionedTypeModel.Name} => ${normalizedApiTypeModel.Name}`);
+            imperative_versioner =  this.machinery.activateVersioner(versionedTypeModel.VersionerName) as adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        }else{
+            this.opts.logger.info(`spec versioner:${versionedTypeModel.VersionerName} normalize ${apiModel.Name}/${versionName}/${versionedTypeModel.Name} => ${normalizedApiTypeModel.Name}`);
+            imperative_versioner  = apiModel.createSpecInstance(versionedTypeModel.VersionerName) as adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        }
 
         // run it == TODO: metric collection here
         imperative_versioner.Normalize(versioned as adltypes.Versioned, normalized as adltypes.Versioned, errors);
@@ -606,10 +612,16 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         // auto  already ran
         if(versionedTypeModel.VersionerName == adltypes.AUTO_VERSIONER_NAME) return;
 
-        //TODO add version name to versioned for logging purposes
         this.opts.logger.verbose(`custom versioner:${versionedTypeModel.VersionerName} is versioning ${normalizedApiTypeModel.Name} => ${apiModel.Name}/${versionName}/${versionedTypeModel.Name}`);
 
-        const imperative_versioner = apiModel.createSpecInstance(versionedTypeModel.VersionerName) as adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        let imperative_versioner: adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        if(this.machinery.hasVersioner(versionedTypeModel.VersionerName)){
+            this.opts.logger.verbose(`runtime versioner:${versionedTypeModel.VersionerName} version ${normalizedApiTypeModel.Name} => ${apiModel.Name}/${versionName}/${versionedTypeModel.Name}`);
+            imperative_versioner = this.machinery.activateVersioner(versionedTypeModel.VersionerName) as  adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        }else{
+            this.opts.logger.verbose(`runtime versioner:${versionedTypeModel.VersionerName} version ${normalizedApiTypeModel.Name} => ${apiModel.Name}/${versionName}/${versionedTypeModel.Name}`);
+            imperative_versioner= apiModel.createSpecInstance(versionedTypeModel.VersionerName) as adltypes.Versioner<adltypes.Normalized, adltypes.Versioned>;
+        }
         // run it == TODO: metric collection here
         imperative_versioner.Convert(normalized as adltypes.Versioned, versioned as adltypes.Versioned, errors);
 
@@ -866,9 +878,14 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         if(normalizedApiTypeModel.NormalizerName == adltypes.AUTO_NORMALIZER_NAME)
             return;
 
-        this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is defaulting ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
-
-        const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        let imperative_normalizer: adltypes.Normalizer<adltypes.Normalized>;
+        if(this.machinery.hasNormalizer(normalizedApiTypeModel.NormalizerName)){
+            this.opts.logger.verbose(`runtime normalizer:${normalizedApiTypeModel.NormalizerName} is defaulting ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            imperative_normalizer = this.machinery.activateNormalizer(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        }else{
+            this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is defaulting ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        }
         // run it == TODO: metric collection here
         imperative_normalizer.Default(normalizedTyped, errors);
     }
@@ -1087,13 +1104,17 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         const rootField = adltypes.getRootFieldDesc();
 
 
-        if(normalizedApiTypeModel.NormalizerName != adltypes.AUTO_NORMALIZER_NAME){
+
+        let imperative_normalizer: adltypes.Normalizer<adltypes.Normalized>;
+        if(this.machinery.hasNormalizer(normalizedApiTypeModel.NormalizerName)){
+            this.opts.logger.verbose(`runtime normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            imperative_normalizer = this.machinery.activateNormalizer(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        }else{
             this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
-            const imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
-            imperative_normalizer.Validate(undefined, normalizedTyped, errors);
+            imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
         }
 
-        this.validate(normalizedTyped, normalizedTyped, existingNormalizedTyped, existingNormalizedTyped, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
+        imperative_normalizer.Validate(undefined, normalizedTyped, errors);
     }
 
     validate_normalized_oncreate(payload: string | any, apiName: string, normalizedApiTypeName: string, errors: adltypes.errorList):void{
@@ -1112,7 +1133,16 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             imperative_normalizer.Validate(undefined, normalizedTyped, errors);
         }
 
-        this.validate(normalizedTyped, normalizedTyped, undefined /* on create we won't have existing*/, undefined, normalizedApiTypeModel, normalizedApiTypeModel, rootField, errors);
+        let imperative_normalizer: adltypes.Normalizer<adltypes.Normalized>;
+        if(this.machinery.hasNormalizer(normalizedApiTypeModel.NormalizerName)){
+            this.opts.logger.verbose(`runtime normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            imperative_normalizer = this.machinery.activateNormalizer(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        }else{
+            this.opts.logger.verbose(`custom normalizer:${normalizedApiTypeModel.NormalizerName} is validating ${apiModel.Name}/${normalizedApiTypeModel.Name}`);
+            imperative_normalizer = apiModel.createSpecInstance(normalizedApiTypeModel.NormalizerName) as adltypes.Normalizer<adltypes.Normalized>;
+        }
+
+        imperative_normalizer.Validate(undefined, normalizedTyped, errors);
     }
 
     // normalize: normalizes payload as the following:
