@@ -167,13 +167,12 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     continue; // this property does not exist in normalized
              }
 
-
             // match data types for models
             if(versionedP.DataTypeKind != normalizedP.DataTypeKind){
                 this.opts.logger.info(`auto-normalize: property ${propertyName} has different DataTypeKind on versioned and normalized models, ignoring`);
                 continue;
             }
-
+/* -- removed we copy and let validation deal with mismatches
             // match data types
             if(adltypes.isScalar(leveledVersioned[propertyName]) && normalizedP.DataTypeKind != modeltypes.PropertyDataTypeKind.Scalar){
                 this.opts.logger.info(`auto-normalize: property ${propertyName} is scalar in input but not on normalized model ${leveledNormalizedModel.Name}, ignoring`);
@@ -191,7 +190,14 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                  this.opts.logger.info(`auto-normalize: property ${propertyName} is array in input but not on normalized model ${leveledNormalizedModel.Name}, ignoring`);
                 continue;
              }
+*/
 
+            // if it is null copy as is
+            if(leveledVersioned[propertyName] == null){
+                 this.opts.logger.verbose(`auto-normalize: property ${propertyName} copied as null value`);
+                leveledNormalized[propertyName] = leveledVersioned[propertyName];
+                continue;
+            }
 
             //copy as as scalar
             if(adltypes.isScalar(leveledVersioned[propertyName])){
@@ -201,22 +207,29 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
             // run it as an object
             if(adltypes.isComplex(leveledVersioned[propertyName])){
-                leveledNormalized[propertyName] = {}; // define empty object
+                leveledNormalized[propertyName] = {}; // define empty object, we can do that comfortably here because we check for nulls
                 if(normalizedP.isMap()){
-                    if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Map){
-                        // copy all map keys as is
-                        for(const key of Object.keys(leveledVersioned[propertyName])){
+                    for(const key of Object.keys(leveledVersioned[propertyName])){
+                        if(leveledVersioned[propertyName][key] == null){
                             leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
+                            continue;
                         }
-                        continue;
-                    }else{
-                        // complex map, source object will have to be a complex object because
-                        // if not missing keys would have flagged it.
-                        for(const key of Object.keys(leveledVersioned[propertyName])){
-                            leveledNormalized[propertyName][key] = {};
-                            this.opts.logger.info(`auto-normalize: attempting to process property ${propertyName} as complex map`);
-                            const walkField =  new adltypes.fieldDesc(key, currentFieldDesc);
-                            this.auto_convert_versioned_normalized(
+                        if(adltypes.isScalar(leveledVersioned[propertyName][key])){
+                            leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
+                            continue;
+                        }
+                        // input must be a complx object
+                        // if target is not complex map then copy as is
+                        if(normalizedP.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexMap){
+                            leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
+                            continue;
+                        }
+
+                        // if target is a complex map
+                        leveledNormalized[propertyName][key] = {};
+                        this.opts.logger.info(`auto-normalize: attempting to process property ${propertyName} as complex map`);
+                        const walkField =  new adltypes.fieldDesc(key, currentFieldDesc);
+                        this.auto_convert_versioned_normalized(
                                 rootVersioned,
                                 leveledVersioned[propertyName][key],
                                 rootNormalized,
@@ -228,11 +241,12 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                 versionName,
                                 walkField,
                                 errors);
-                        }
                         continue;
                     }
-                }else{
-                    // copy comple object
+               }
+
+                // if target is complex then process
+               if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                     this.auto_convert_versioned_normalized(
                         rootVersioned,
                         leveledVersioned[propertyName],
@@ -245,27 +259,24 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         versionName,
                         currentFieldDesc,
                         errors);
-                    continue;
+                        continue;
                 }
+
+                // we don't know what is that, copy as is, let the validation deal with it
+                leveledNormalized[propertyName] = leveledVersioned[propertyName];
+                continue;
             }
 
-        // if src and target are arrays
         if(adltypes.isArray(leveledVersioned[propertyName])){
             leveledNormalized[propertyName] = [];
-
             for(let i =0; i < leveledVersioned[propertyName].length; i++){
-
                 // create indexed field desc
                 const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
                 indexedFieldDesc.index = i;
-
-
                 // here we have to copy anyway to maintain array size. (versioned.len == normalized.len)
                 // even if they are not equal data types (validation will validate it).
-
                 if(adltypes.isComplex(leveledVersioned[propertyName][i])){
                     leveledNormalized[propertyName][i] = {};
-
                     if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
                         this.auto_convert_versioned_normalized(
                             rootVersioned,
@@ -279,6 +290,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             versionName,
                             indexedFieldDesc,
                             errors);
+                    }else{
+                        leveledNormalized[propertyName][i] = leveledVersioned[propertyName][i];
+                        continue;
                     }
                 }else{
                     leveledNormalized[propertyName][i] = leveledVersioned[propertyName][i];
@@ -777,7 +791,9 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                               leveledApiTypeModel: modeltypes.ApiTypeModel,
                               parent_field: adltypes.fieldDesc,
                               errors: adltypes.errorList): void{
-
+        /* note we work with properties as they were defined, not properties
+         * as they appear in the input object graph
+         */
         for(let p of leveledApiTypeModel.Properties){
             if(p.isRemoved) continue; /* don't default a removed property*/
 
@@ -888,31 +904,40 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             // if field is missing. this will happen if conversion logic is not
             // well made. this error will be caught in roundtripping phase.
             // we have to be careful, optional fields won't have value
-            const hasValue = (leveled[p.Name] != undefined)
+            const exist = leveled.hasOwnProperty(p.Name);
 
-            // TODO: !!!!!! nulls
-            if(!p.isOptional && !hasValue){
+            if(!p.isOptional && !exist){
                 errors.push(machinerytypes.createValidationError(`field ${p.Name} is missing`, currentFieldDesc));
                 continue;
             }
 
+            if(!exist) continue; // if the field is not on the input object then we can not do anything more
+
+            // nullability
+            if(leveled[p.Name] == null && !p.isNullable){
+               errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. null is not expected`, currentFieldDesc));
+                continue;
+            }
+
+            if(leveled[p.Name] == null) continue; // if the field value is null then there is nothing more we can do here
+
             // basic data type match validation
-            if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex  && !adltypes.isComplex(leveled[p.Name])){
+            if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex  && !adltypes.isComplex(leveled[p.Name])){
                 errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected complex object`, currentFieldDesc));
                 continue;
             }
 
-            if(hasValue && p.isMap()  && !adltypes.isComplex(leveled[p.Name])){
+            if(p.isMap()  && !adltypes.isComplex(leveled[p.Name])){
                 errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected a map`, currentFieldDesc));
                 continue;
             }
 
-            if(hasValue && p.isArray() && !adltypes.isArray(leveled[p.Name])){
+            if(p.isArray() && !adltypes.isArray(leveled[p.Name])){
                 errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected array`, currentFieldDesc));
                 continue;
             }
 
-            if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.DataTypeName != (typeof leveled[p.Name])){
+            if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.DataTypeName != (typeof leveled[p.Name])){
                 errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected ${p.DataTypeName}`, currentFieldDesc));
                 continue;
             }
@@ -936,34 +961,53 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             // maps are a bit tricky, we need to validate
             // keys
             // values
-            if(hasValue && p.isMap()){
+            if(p.isMap()){
                 const keyConstranints = p.MapKeyConstraints;
                 const valueConstraints = p.MapValueConstraints;
                 for(const key of Object.keys(leveled[p.Name])){
                     const walkField = new adltypes.fieldDesc(key, currentFieldDesc);
-                    // match data types
+                    const valueIsNull = (leveled[p.Name][key] == null);
+                    const dataTypeModel = p.DataTypeModel as modeltypes.PropertyMapDataType;
+
+                    // nullable values
+                    if(valueIsNull && !dataTypeModel.isValueNullable){
+                       errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Unexpected null`, walkField));
+                       continue;
+                    }
+
+                    if(valueIsNull) continue; // value is null, nothing more to do here
+
+                    // value can not be an array
+                    if(adltypes.isArray(leveled[p.Name][key])){ // value can not be an array
+                       errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Unexpected array`, walkField));
+                       continue;
+                    }
+
+                    // value is complex, but we don't expect complex
                     if(adltypes.isComplex(leveled[p.Name][key]) && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Map){
                        errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Expected scalar`, walkField));
                        continue;
                     }
 
+                    // value is simple, but we expect complex objext
                     if(!adltypes.isComplex(leveled[p.Name][key]) && p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap){
                         errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Expected complex object`, walkField));
                         continue;
                     }
 
-                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapValueDataTypeNameOrThrow() != (typeof leveled[p.Name][key])){
+                    // scalar value data type needs to match
+                    if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapValueDataTypeNameOrThrow() != (typeof leveled[p.Name][key])){
                         errors.push(machinerytypes.createValidationError(`field ${p.Name}[${key}] is invalid. Expected ${p.getMapValueDataTypeNameOrThrow()}`, walkField));
                         continue;
                     }
 
-                    if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapKeyDataTypeNameOrThrow() != (typeof key)){
+                    // scalary key needs to match
+                    if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar && p.getMapKeyDataTypeNameOrThrow() != (typeof key)){
                         errors.push(machinerytypes.createValidationError(`key ${p.Name}/${key} is invalid. Expected ${p.getMapValueDataTypeNameOrThrow()}`, walkField));
                         continue;
                     }
 
-
-                    // validate the key
+                    // run constraints for key
                     for(let c of keyConstranints){
                         const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
                         const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, key, walkField, errors);
@@ -977,7 +1021,8 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             leveledApiTypeModel,
                             true);
                     }
-                    // validate the value
+
+                    // run constaint for value
                      for(let c of valueConstraints){
                         const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
                         const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, key, walkField, errors);
@@ -1009,7 +1054,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
              continue;
             }
             // complex data type
-            if(hasValue && p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
+            if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                 this.validate(
                     root,
                     leveled[p.Name],
@@ -1023,10 +1068,20 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             }
 
             // run an array
-            if(hasValue && p.isArray()){
+            if(p.isArray()){
                 for(let i =0; i < leveled[p.Name].length; i++){
                     const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
                     indexedFieldDesc.index = i;
+
+                    // null element
+                    const elementIsNull = (leveled[p.Name][i] == null);
+                    const elementDataTypeModel = p.DataTypeModel as modeltypes.PropertyArrayDataType;
+
+                    if(elementIsNull && !elementDataTypeModel.isElementNullable){
+                        errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Unexpected null`, indexedFieldDesc));
+                        continue;
+                    }
+                    if(elementIsNull) continue; // nothing more can be done
 
                     if(p.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
                         // if entry in array does not match expected data type
@@ -1167,7 +1222,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
         if(extraKeys.size > 0 || missingKeys.size > 0)
             return {} as adltypes.Normalized;
 
-            // with the rest of valiation
+        // with the rest of valiation
         const normalized = {} as adltypes.Normalized;
 
         this.convert_versioned_normalized(versionedTyped, normalized, apiModel, versionModel.Name, versionedTypeModel, normalizedTypeModel, rootField, errors);

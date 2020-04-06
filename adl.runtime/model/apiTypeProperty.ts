@@ -201,6 +201,9 @@ export class type_property{
         return this.p.getQuestionTokenNode() != undefined;
     }
 
+    get isNullable(): boolean{
+        return this._property_data_type_model.hasNullableConstraint();
+    }
     constructor(private containerType: Type,
                 private containerDeclaration: ClassDeclaration| InterfaceDeclaration,
                 private p: PropertySignature | PropertyDeclaration,
@@ -439,6 +442,14 @@ class property_DataType implements modeltypes.PropertyDataType{
         return constraints.filter(c => c.Name === name).length > 0;
     }
 
+    hasNullableConstraint(): boolean{
+        if(this._cache.has("hasNullableConstraint"))
+            return this._cache.get("hasNullableConstraint") as boolean;
+
+        const nullableConstraints =  this.getConstraintsByType(adltypes.CONSTRAINT_NAME_NULLABLE);
+        this._cache.set("hasNullableConstraint", nullableConstraints.length == 1);
+        return this._cache.get("hasNullableConstraint") as boolean;
+    }
 }
 // scalar data type
 export class  property_ScalarDataType extends property_DataType
@@ -572,6 +583,10 @@ export class  property_SimpleArrayDataType extends property_DataType
     hasElementEnumConstraint(): boolean{
         return this._element_scalar_data_type.hasEnumConstraint();
     }
+
+    isElementNullable(): boolean{
+        return this._element_scalar_data_type.hasNullableConstraint();
+    }
 }
 export class  property_ComplexArrayDataType extends property_DataType
                                      implements modeltypes.PropertyComplexArrayDataType{
@@ -633,13 +648,18 @@ export class  property_ComplexArrayDataType extends property_DataType
         return this._element_complex_data_type.hasEnumConstraint();
     }
 
-    load(errors: adltypes.errorList): boolean{
-        return this._element_complex_data_type.load(errors);
+    isElementNullable(): boolean{
+        return this._element_complex_data_type.hasNullableConstraint();
     }
+
     get ElementConstraints():Array<modeltypes.ConstraintModel>{
         return this._element_complex_data_type.Constraints;
     }
 
+
+    load(errors: adltypes.errorList): boolean{
+        return this._element_complex_data_type.load(errors);
+    }
 }
 
 export class  property_SimpleMapDataType extends property_DataType
@@ -741,6 +761,10 @@ export class  property_SimpleMapDataType extends property_DataType
     hasValueEnumConstraint(): boolean{
         return this._value_scalar_data_type.hasEnumConstraint();
     }
+
+    get isValueNullable(): boolean{
+        return this._value_scalar_data_type.hasNullableConstraint();
+    }
 }
 export class  property_ComplexMapDataType extends property_DataType
                                      implements modeltypes.PropertyComplexMapDataType{
@@ -817,6 +841,10 @@ export class  property_ComplexMapDataType extends property_DataType
         return this._value_Complex_data_type.Constraints;
     }
 
+    get isValueNullable(): boolean{
+        return this._value_Complex_data_type.hasNullableConstraint();
+    }
+
     get ValueValidationConstraints(): Array<modeltypes.ConstraintModel>{
         return this._value_Complex_data_type.ValidationConstraints;
     }
@@ -834,6 +862,77 @@ export class  property_ComplexMapDataType extends property_DataType
     }
 }
 
+function validateDataType(containerType: Type,
+                          containerDeclaration: ClassDeclaration| InterfaceDeclaration,
+                          typer: helpers.typerEx,
+                          propertyName: string,
+                          nameOfContainer: string,
+                          opts: modeltypes.apiProcessingOptions,
+                          errors:adltypes.errorList): boolean{
+     // typer validation logic
+     // weather or not the property defined as an intersection, we need to make
+     // sure that only ONE type is the data type, the rest are constraints
+     // fancy_property: string & Required (OK)
+     // fancy_property: string & int & Required (NOT OK: data type is intersecting)
+     // fancy_property: Required & MustMatch<..> (NOT OK: there is no data type)
+     // TODO check for union types
+     const nonConstraintsTypeNodes = typer.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
+     if(nonConstraintsTypeNodes.length != 1){
+     // let us assume that it was not defined
+     let message = `invalid data type for property ${nameOfContainer}/${propertyName}. must have a data type defined`;
+
+     if(nonConstraintsTypeNodes.length == 1)
+        message = `invalid data type for property ${nameOfContainer}/${propertyName}. must have a single data type`;
+
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return false;
+     }
+
+     // must have max of one adl.DataType
+     const dataTypes = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
+     if(dataTypes.length > 1){
+        const message = `invalid data type for property ${nameOfContainer}/${propertyName} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return false;
+     }
+
+     // must have max of one OneOf(enum);
+     const enumConstraints = typer.MatchIfInherits(adltypes.INTERFACE_NAME_ONEOF);
+     if(dataTypes.length > 1){
+        const message = `invalid data type for property ${nameOfContainer}/${propertyName} multiple ${adltypes.INTERFACE_NAME_ONEOF} defined on property, only one instance is allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return false;
+     }
+
+    const nullableConstraints = typer.MatchIfInherits(adltypes.CONSTRAINT_NAME_NULLABLE);
+    if(nullableConstraints.length > 1){
+        const message = `invalid data type for property ${nameOfContainer}/${propertyName} multiple ${adltypes.CONSTRAINT_NAME_NULLABLE} defined on property, only one instance is allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return false;
+    }
+
+      // data type validation and selection
+     const t  = nonConstraintsTypeNodes[0]; // this the Type that represents the non constraint
+     //appeared_t is what appars in property definition
+     const appeared_t = getPropertyTrueType(containerDeclaration, containerType, t);
+     // flush out everything we don't work with
+     // union types will be introduced when we build for unions
+     // unions are only allowed in boolean because of the way the compiler represents boolean internally
+     // should also check for literals
+     if(t.isUnion() && !helpers.isBoolean(appeared_t)){
+        const message = `invalid data type for property ${nameOfContainer}/${propertyName}  unions are not allowed`
+        opts.logger.err(message);
+        errors.push(helpers.createLoadError(message));
+        return false;
+     }
+
+   return true;
+}
+// validates and creates property data type mode;
 function createPropertyDataType(containerType: Type,
                                 containerDeclaration: ClassDeclaration| InterfaceDeclaration,
                                 p: PropertySignature | PropertyDeclaration,
@@ -854,60 +953,15 @@ function createPropertyDataType(containerType: Type,
     const original_t = typeNode.getType();
     const typer = new helpers.typerEx(original_t);
 
-     // validation logic
-     // weather or not the property defined as an intersection, we need to make
-     // sure that only ONE type is the data type, the rest are constraints
-     // fancy_property: string & Required (OK)
-     // fancy_property: string & int & Required (NOT OK: data type is intersecting)
-     // fancy_property: Required & MustMatch<..> (NOT OK: there is no data type)
-     // TODO check for union types
+    if(!validateDataType(containerType, containerDeclaration, typer, p.getName(), nameOfContainer, opts, errors))
+        return undefined;
+
      const nonConstraintsTypeNodes = typer.MatchIfNotInherits(adltypes.INTERFACE_NAME_PROPERTYCONSTRAINT);
-     if(nonConstraintsTypeNodes.length != 1){
-     // let us assume that it was not defined
-     let message = `invalid data type for property ${nameOfContainer}/${p.getName()}. must have a data type defined`;
-
-     if(nonConstraintsTypeNodes.length == 1)
-        message = `invalid data type for property ${nameOfContainer}/${p.getName()}. must have a single data type`;
-
-        opts.logger.err(message);
-        errors.push(helpers.createLoadError(message));
-        return undefined;
-     }
-
-     // must have max of one adl.DataType
-     const dataTypes = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
-     if(dataTypes.length > 1){
-        const message = `invalid data type for property ${nameOfContainer}/${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
-        opts.logger.err(message);
-        errors.push(helpers.createLoadError(message));
-        return undefined;
-     }
-
-     // must have max of one OneOf(enum);
-     const enumConstraints = typer.MatchIfInherits(adltypes.INTERFACE_NAME_DATATYPE);
-     if(dataTypes.length > 1){
-        const message = `invalid data type for property ${nameOfContainer}/${p.getName()} multiple ${adltypes.INTERFACE_NAME_DATATYPE} defined on property, only one instance is allowed`
-        opts.logger.err(message);
-        errors.push(helpers.createLoadError(message));
-        return undefined;
-     }
-
 
      // data type validation and selection
      const t  = nonConstraintsTypeNodes[0]; // this the Type that represents the non constraint
      //appeared_t is what appars in property definition
      const appeared_t = getPropertyTrueType(containerDeclaration, containerType, t);
-     // flush out everything we don't work with
-     // union types will be introduced when we build for unions
-     // unions are only allowed in boolean because of the way the compiler represents boolean internally
-     // should also check for literals
-     if(t.isUnion() && !helpers.isBoolean(appeared_t)){
-        const message = `invalid data type for property ${nameOfContainer}/${p.getName()}  unions are not allowed`
-        opts.logger.err(message);
-        errors.push(helpers.createLoadError(message));
-        return undefined;
-     }
-
 
      // true_t points to declaration if it has any
      let true_t = appeared_t; // both are the same initially
@@ -934,6 +988,7 @@ function createPropertyDataType(containerType: Type,
             errors.push(helpers.createLoadError(message));
             return undefined;
         }
+
         const element_t = getPropertyTrueType(containerDeclaration, containerType, element_appeared_t);
         // arrays of any are not allowed
         if(element_t.isAny()){
@@ -950,13 +1005,17 @@ function createPropertyDataType(containerType: Type,
             errors.push(helpers.createLoadError(message));
             return undefined;
         }
+        // validate the element
+        const typer_element = new helpers.typerEx(element_t);
+        if(!validateDataType(containerType, containerDeclaration, typer_element, `${p.getName()}/element`, nameOfContainer, opts, errors))
+            return undefined;
 
         // basic type is cool
         if(element_t.isString() || element_t.isNumber() || helpers.isBoolean(element_t)){
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple array`);
             return new property_SimpleArrayDataType(
                                             element_appeared_t,
-                                            new helpers.typerEx(element_t),
+                                            typer_element,
                                             typer,
                                             appeared_t,
                                             containerType,
@@ -964,7 +1023,6 @@ function createPropertyDataType(containerType: Type,
                                             p,
                                             opts);
         }
-
 
         if(element_t.isClassOrInterface() || element_t.isIntersection()){
             const dataTypeName = element_t.getSymbolOrThrow().getName();
@@ -979,7 +1037,7 @@ function createPropertyDataType(containerType: Type,
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex array`);
             const complexArray = new property_ComplexArrayDataType(
                                             element_appeared_t,
-                                            new helpers.typerEx(element_t),
+                                            typer_element,
                                             typer,
                                             appeared_t,
                                             containerType,
@@ -1005,15 +1063,16 @@ function createPropertyDataType(containerType: Type,
             errors.push(helpers.createLoadError(message));
             return undefined;
         }
+
         if(true_t.getSymbolOrThrow().getName() != adltypes.ADL_MAP_TYPENAME){
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as a complex data type`);
             const complexPropertyDataType =  new property_ComplexDataType(typer,
-                                          appeared_t,
-                                          containerType,
-                                          containerDeclaration,
-                                          p,
-                                          _apiTypeModelCreator,
-                                          opts);
+                                                                          appeared_t,
+                                                                          containerType,
+                                                                          containerDeclaration,
+                                                                          p,
+                                                                          _apiTypeModelCreator,
+                                                                          opts);
 
             if(!complexPropertyDataType.load(errors))  return undefined;
             return complexPropertyDataType;
@@ -1026,6 +1085,25 @@ function createPropertyDataType(containerType: Type,
         const value_appeared_t = typeArgs[1];
         const key_true_t = getPropertyTrueType(containerDeclaration, containerType, key_appeared_t);
         const val_true_t = getPropertyTrueType(containerDeclaration, containerType, value_appeared_t);
+
+        // validate the element
+        const typer_key = new helpers.typerEx(key_appeared_t);
+        if(!validateDataType(containerType, containerDeclaration, typer_key, `${p.getName()}/key`, nameOfContainer, opts, errors))
+            return undefined;
+
+        const typer_value = new helpers.typerEx(value_appeared_t);
+        if(!validateDataType(containerType, containerDeclaration, typer_value, `${p.getName()}/value`, nameOfContainer, opts, errors))
+            return undefined;
+
+        // key can not be nullable
+        const nullableKeyConstraints = typer_key.MatchingInherits(adltypes.CONSTRAINT_NAME_NULLABLE, true);
+        if(nullableKeyConstraints.length > 0){
+            const message = `invalid key data type for map ${p.getName()} key can not be nullable`
+            opts.logger.err(message);
+            errors.push(helpers.createLoadError(message));
+            return undefined;
+        }
+
         if(!key_true_t.isString() &&  key_true_t.isNumber()){
             const message = `invalid key data type for map ${p.getName()} only string or number is allowed`
             opts.logger.err(message);
@@ -1046,9 +1124,9 @@ function createPropertyDataType(containerType: Type,
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple map`);
             return new property_SimpleMapDataType(
                    key_true_t,
-                   new helpers.typerEx(key_appeared_t),
+                   typer_key,
                    val_true_t,
-                   new helpers.typerEx(value_appeared_t),
+                   typer_value,
                    typer,
                    appeared_t,
                    containerType,
@@ -1059,9 +1137,9 @@ function createPropertyDataType(containerType: Type,
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as complex map`);
             const complexMap = new property_ComplexMapDataType(
                    key_true_t,
-                   new helpers.typerEx(key_appeared_t),
+                   typer_key,
                    val_true_t,
-                   new helpers.typerEx(value_appeared_t),
+                   typer_value,
                    typer,
                    appeared_t,
                    containerType,

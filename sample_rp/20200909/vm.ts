@@ -25,7 +25,7 @@ export interface VirtualMachineProps{
     *  @prop_tag1 because we are using jsdoc, we can use tags. those are also exposed to whoever consumes the model
     *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
     */
-    vmId : string;
+    vmId : string & adltypes.Nullable;
 
     hardwareProfile: HWProfile;
 

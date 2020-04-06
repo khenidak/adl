@@ -16,8 +16,6 @@ type Kind<V> = V & TypeOf<V>;
 /** Declares the property is a polymorphic discriminator */
 type Discriminator<V> = V;
 
-// TODO: Create a dictionary that has
-// validation for keys and values
 /** an dictionary of key(string)/value pairs */
 export interface AdlMap<K,V> {}
 

@@ -99,6 +99,7 @@ export interface PropertyDataType{
     hasAliasDataTypeConstraint(): boolean;
     hasEnumConstraint(): boolean;
     hasConstraint(name:string):boolean;
+    hasNullableConstraint(): boolean;
 }
 // scalar data type
 export interface PropertyScalarDataType extends PropertyDataType{
@@ -117,6 +118,7 @@ export interface PropertyArrayDataType extends PropertyDataType{
     readonly ElementConstraints:Array<ConstraintModel>;
     hasElementAliasDataTypeConstraint(): boolean;
     hasElementEnumConstraint(): boolean;
+    isElementNullable():boolean;
 }
 export interface PropertySimpleArrayDataType extends PropertyArrayDataType{
     readonly ElementDataTypeName: string;
@@ -137,6 +139,7 @@ export interface PropertyMapDataType extends PropertyDataType{
     readonly KeyEnumValues: any[];
     hasKeyAliasDataTypeConstraint(): boolean;
     hasKeyEnumConstraint(): boolean;
+    readonly isValueNullable: boolean;
 }
 
 // simple map
@@ -236,7 +239,9 @@ export interface ApiTypePropertyModel extends loadableObject{
     readonly DataTypeKind: PropertyDataTypeKind;
     // property is optional
     readonly isOptional: boolean;
-    // returns the complex data type for property if available;
+    // data type for this property can be null
+    readonly isNullable: boolean;
+
     // don't run auto conversion on type
     readonly isManaullyConverted: boolean;
     // returns true if the type is aliased via DataType<Name>;
