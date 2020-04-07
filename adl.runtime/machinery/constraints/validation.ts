@@ -2,6 +2,36 @@ import * as adltypes from '@azure-tools/adl.types'
 import * as machinerytypes from '../machinery.types'
 import * as modeltypes from '../../model/module'
 
+export class MustMatchImpl implements machinerytypes.ValidationConstraintImpl{
+    Run(
+        context: machinerytypes.ConstraintExecContext,
+        rootTyped: any,
+        leveledTyped: any,
+        existingRootTyped: any | undefined,
+        existingLeveledTyped: any | undefined,
+        rootApiTypeModel: modeltypes.ApiTypeModel,
+        leveledApiTypeModel: modeltypes.ApiTypeModel,
+        isMapKey: boolean): boolean{
+
+       const propVal = leveledTyped[context.propertyName];
+       let regExp = context.ConstraintArgs[0];
+       regExp = regExp.replace(/\\\\/g, '\\');
+       const re = new RegExp(regExp);
+       context.opts.logger.verbose(`constraint: MustMatch prop:${context.propertyName} with value (${propVal}) applying compiled regExp:${re.source}`);
+
+       if(!re.test(propVal)){
+         const propModel = leveledApiTypeModel.getProperty(context.propertyName) as modeltypes.ApiTypePropertyModel;
+         let details = " ";
+         if(propModel.isAliasDataType){
+            details = `for ${context.propertyName}(${propModel.AliasDataTypeName})`
+         }else{
+            details = `for ${context.propertyName}`
+         }
+         context.errors.push(machinerytypes.createValidationError(`value(${propVal}) is not valid ${details} must match regexp:`+regExp, context.fieldPath));
+       }
+        return true;
+    }
+}
 
 
 export class MinLengthImpl implements machinerytypes.ValidationConstraintImpl{
@@ -15,8 +45,9 @@ export class MinLengthImpl implements machinerytypes.ValidationConstraintImpl{
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean{
 
-       context.opts.logger.verbose(`calling MaxLengthImpl for ${context.propertyName}`);
        const propVal = leveledTyped[context.propertyName];
+       context.opts.logger.verbose(`constraint:MaxLength for Property:${context.propertyName} value:{propVal} maxLen:${context.ConstraintArgs[0]}`);
+
        if(propVal == undefined) return true;
 
        if((propVal as string).length < (context.ConstraintArgs[0] as number)){
@@ -38,8 +69,10 @@ export class MaxLengthImpl implements machinerytypes.ValidationConstraintImpl{
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean{
 
-        context.opts.logger.verbose(`calling MaxLengthImpl for ${context.propertyName}`);
        const propVal = leveledTyped[context.propertyName];
+       context.opts.logger.verbose(`constraint: MinLength for Property:${context.propertyName} value:{propVal} maxLen:${context.ConstraintArgs[0]}`);
+
+
        if(propVal == undefined) return true;
 
             if((propVal as string).length > (context.ConstraintArgs[0] as number)){

@@ -1,22 +1,22 @@
 {
     "etag": "",
-    "id": "",
+    "id": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.compute/virtualmachine/vm1",
     "location": "",
     "name": "",
     "properties": {
         "coreCount": 100,
         "dataDisks": [
             {
-                "diskId": "diskid-here",
+                "diskId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.disks/disks/disk1",
 		"isSSD": true
             }
         ],
         "hardwareProfile": {
-            "vmSize": "StandardDS_v3"
+            "virtualMachineSize": "StandardDS_v3"
         },
         "networkCards": {
             "third": {
-                "networkCardId": "network-card-id"
+                "networkCardId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.network/network-card/card1"
             }
         },
         "storageProfile": {
@@ -28,7 +28,7 @@
         "v1Prop": 9,
         "vmId": "string-here"
     },
-    "resourceGroup": "my resource group",
+    "resourceGroup": "myresourcegroup",
     "tags": {
         "key1": "val1",
         "key2": "val2"

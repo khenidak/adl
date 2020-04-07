@@ -49,7 +49,7 @@ interface ImageReference{
     sku: string;
 
     version: string &
-             adltypes.MustMatch<'some-arbitrary-regex'>;
+             adltypes.MustMatch<'^[-\\w\\._\\(\\)]+'>;
 }
 
 interface DataDisk {

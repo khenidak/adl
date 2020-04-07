@@ -29,7 +29,7 @@ export interface Range<L extends number, H extends number> extends ValidationCon
  *
  * @param T - the regular expression
 */
-export interface MustMatch<T extends string> extends PropertyConstraint {}
+export interface MustMatch<doubleEscapedRE extends string> extends ValidationConstraint{}
 
 
 /** a number value that is a multiple of a given number */

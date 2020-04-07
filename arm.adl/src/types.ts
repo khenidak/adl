@@ -1,15 +1,18 @@
 import *  as adltypes from '@azure-tools/adl.types'
-/* the below allows arm developer to define resources without having to
- * worry about arm tracking information
- */
+// TODO: we should define constraints that allows use to express resource of specific provider and type
+// example: NetworkCard = string & adltypes.DataType<'networkCard'> & ArmResourceId<'microsoft.network', 'card'>
+// the definition of ArmResourceId will look like this ArmResourceId<provider, type> extends MustMatch<...>
+
 export type SubscriptionId = string;
 export type Location = string;
 export type ResourceGroup = string;
 
 // Arm common data types.
-export type ArmResourceId = string & adltypes.MustMatch<'TODO: ARM RESOURCE ID REG EXP'>
-export type ResourceType = string & adltypes.MustMatch<'TODO: ARM RESOURCE TYPE REG EXP'>
-export type ArmResourceName = string & adltypes.MustMatch<'TODO: ARM RESOURCE TYPE REG EXP'>;
+
+export type ArmResourceId = string & adltypes.DataType<'ArmResourceId'> &
+                            adltypes.MustMatch<'\\/subscriptions\\/[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}\\/resourcegroups\\/[-\\w\\._\\(\\)]+\\/[-\\w\\._\\(\\)]+\\/*.'>
+export type ResourceType = string & adltypes.MustMatch<'^[-\\w\\._\\(\\)]+'>
+export type ArmResourceName = string & adltypes.MustMatch<'^[-\\w\\._\\(\\)]+'>;
 
 
 // Arm envelop for normalized resource
