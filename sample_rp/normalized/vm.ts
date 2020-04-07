@@ -56,14 +56,13 @@ interface DataDisk {
     diskId: armtypes.ArmResourceId; // note: custom type
     diskSize?: number & adltypes.DefaultValue<160>;
     //defaulted boolean
-    isUltra?: boolean & adltypes.DefaultValue<true>;
+    isUltra?: boolean & adltypes.DefaultValue<false>;
     // undefauled boolean
-    isSSD: boolean;
+    isSSD?: boolean;
 }
 
 interface HWProfile {
-    virtualMachineSize: string &
-                        adltypes.DefaultValue<'ds_v2'>;
+    virtualMachineSize: string & adltypes.DefaultValue<'ds_v2'>;
 }
 
 interface NetworkCard{

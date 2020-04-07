@@ -7,8 +7,7 @@
         "coreCount": 100,
         "dataDisks": [
             {
-                "diskId": "diskid-here",
-		"isSSD": true
+                "diskId": "diskid-here"
             }
         ],
         "hardwareProfile": {

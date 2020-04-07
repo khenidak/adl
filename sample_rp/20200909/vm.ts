@@ -62,8 +62,9 @@ export interface ImageReference{
 
 export interface DataDisk {
     diskId: armtypes.ArmResourceId;
-    isSSD: boolean;
+    isSSD?: boolean;
 }
+
 interface NetworkCard{
     networkCardId: armtypes.ArmResourceId;
 }

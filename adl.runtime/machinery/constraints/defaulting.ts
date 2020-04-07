@@ -18,7 +18,7 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
         }
 
         // set default value
-        if(leveledTyped[context.propertyName] == undefined){
+        if(leveledTyped.hasOwnProperty(context.propertyName) || leveledTyped[context.propertyName] == null){
             if(p.DataTypeName == "string") {
                 leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
                 return;
@@ -30,7 +30,7 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
             }
 
             if(p.DataTypeName == "boolean"){
-                leveledTyped[context.propertyName] = Boolean(context.ConstraintArgs[0]);
+                leveledTyped[context.propertyName] = JSON.parse(context.ConstraintArgs[0]); // *sigh*
                 return;
             }
         }
@@ -44,7 +44,7 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
             leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0] as number);
             return;
         }
-        // boolean has to be set if the property is not undefined.
+        // boolean can't be set if the property is not null or exist.
     }
 }
 
