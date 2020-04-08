@@ -18,7 +18,7 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
         }
 
         // set default value
-        if(leveledTyped.hasOwnProperty(context.propertyName) || leveledTyped[context.propertyName] == null){
+        if(!leveledTyped.hasOwnProperty(context.propertyName) || leveledTyped[context.propertyName] == null){
             if(p.DataTypeName == "string") {
                 leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
                 return;
@@ -28,7 +28,6 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
                 leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0]);
                 return;
             }
-
             if(p.DataTypeName == "boolean"){
                 leveledTyped[context.propertyName] = JSON.parse(context.ConstraintArgs[0]); // *sigh*
                 return;
