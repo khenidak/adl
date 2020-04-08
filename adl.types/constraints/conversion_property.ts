@@ -6,4 +6,9 @@ import { ConversionConstraint } from './types'
 // normalized => versioned
 
 // maps the property from one location to another
-export interface MapTo<sourceNameOrJPath extends string> extends ConversionConstraint{}
+export interface RenameTo<targetName extends string> extends ConversionConstraint{}
+
+// moves one property to another in the target
+export interface MoveTo<targetJsonPath extends string> extends ConversionConstraint{}
+
+

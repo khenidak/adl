@@ -36,6 +36,8 @@ interface VirtualMachineProps{
     *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
     */
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
+
+    userProfile?: UserProfile;
 }
 
 interface ImageReference{
@@ -69,5 +71,17 @@ interface NetworkCard{
     networkCardId: armtypes.ArmResourceId;
     networkName?: string & adltypes.DefaultValue<'my_net_name'>;
 }
+
+interface PasswordProfile{
+    passeword?: string;
+    publicKey?: string;
+}
+
+interface UserProfile{
+    username?: string;
+    passwordProfile?: PasswordProfile;
+}
+
+
 // we have defined this resource, but we want arm core properties, so we envelop it
 export type VirtualMachineNormalized = armtypes.ArmNormalizedResource<VirtualMachineProps>;

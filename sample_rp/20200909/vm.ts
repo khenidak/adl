@@ -35,7 +35,7 @@ export interface VirtualMachineProps{
 
     v1Prop: number;
 
-    coreCount: number & adltypes.MapTo<'totalCores'>;
+    coreCount: number & adltypes.RenameTo<'totalCores'>;
 
     /**
     *  this is another property documentation, i can here describe the property for user facing doc. I can also
@@ -47,10 +47,17 @@ export interface VirtualMachineProps{
     *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
     */
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
+
+
+    // those are flat properties that will be mapped
+    // to a complex object during conversion
+    username: string & adltypes.MoveTo<'$.properties.userProfile.username'>;
+    password: string;
+    publicKey: string;
 }
 
 export interface HWProfile {
-    vmSize: string & adltypes.MapTo<'virtualMachineSize'>;
+    vmSize: string & adltypes.RenameTo<'virtualMachineSize'>;
 }
 
 export interface ImageReference{

@@ -4,14 +4,14 @@
     "location": "",
     "name": "myvm",
     "properties": {
-        "coreCount": 100,
+        "coreCount": 109,
         "dataDisks": [
             {
                 "diskId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.disks/disks/disk1"
             }
         ],
         "hardwareProfile": {
-            "vmSize": "StandardDS_v3"
+            "vmSize": "StandardDS_vNext"
         },
         "networkCards": {
             "third": {
@@ -25,7 +25,11 @@
             "version": "version field value"
         },
         "v1Prop": 9,
-        "vmId": "str"
+        "vmId": "str",
+	"username": "vmuser",
+    	"password": "abc$123",
+    	"publicKey": "my-ssh-publick-key"
+
     },
     "resourceGroup": "myresourcegroup",
     "tags": {
