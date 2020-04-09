@@ -52,8 +52,8 @@ export interface VirtualMachineProps{
     // those are flat properties that will be mapped
     // to a complex object during conversion
     username: string & adltypes.MoveTo<'$.properties.userProfile.username'>;
-    password: string;
-    publicKey: string;
+    password: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.password'>;
+    publicKey: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.publicKey'>;
 }
 
 export interface HWProfile {

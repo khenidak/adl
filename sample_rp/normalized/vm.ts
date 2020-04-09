@@ -73,7 +73,7 @@ interface NetworkCard{
 }
 
 interface PasswordProfile{
-    passeword?: string;
+    password?: string;
     publicKey?: string;
 }
 

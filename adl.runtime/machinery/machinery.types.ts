@@ -187,7 +187,7 @@ export interface ConversionConstraintImpl{
     ConvertToNormalized(
         context: ConstraintExecContext,
         //runtime (to walk through nested object graph if needed
-        r: ApiRuntime,
+        r: internal_converter,
         // root of versioned object
          rootVersioned: any,
         // leveled current versioned object
@@ -208,7 +208,7 @@ export interface ConversionConstraintImpl{
     ConvertToVersioned(
         context: ConstraintExecContext,
         //runtime (to walk through nested object graph if needed
-        r: ApiRuntime,
+        r: internal_converter,
         // root of versioned object
          rootVersioned: any,
         // leveled current versioned object
@@ -223,7 +223,6 @@ export interface ConversionConstraintImpl{
         rootNormalizedModel: modeltypes.ApiTypeModel,
         leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
         versionName: string):void;
-
 }
 
 export function createValidationError(message: string, fieldPath: adltypes.fieldDesc): adltypes.error{
@@ -233,7 +232,62 @@ export function createValidationError(message: string, fieldPath: adltypes.field
     e.field = fieldPath;
     return e;
 }
+// what gets passed to conversion constraints
+export interface internal_converter{
+    auto_convert_versioned_normalized_map(
+        propertyName: string,
+        rootVersioned: any,
+        leveledVersioned: any,
+        rootNormalized: any,
+        leveledNormalized: any,
+        rootVersionedModel:modeltypes.ApiTypeModel,
+        leveledVersionedModel:modeltypes.ApiTypeModel,
+        rootNormalizedModel: modeltypes.ApiTypeModel,
+        leveledNormalizedModel: modeltypes.ApiTypeModel,
+        versionName: string,
+        currentFieldDesc: adltypes.fieldDesc,
+        errors: adltypes.errorList):void;
 
+    auto_convert_versioned_normalized_array(
+        propertyName: string,
+        rootVersioned: any,
+        leveledVersioned: any,
+        rootNormalized: any,
+        leveledNormalized: any,
+        rootVersionedModel:modeltypes.ApiTypeModel,
+        leveledVersionedModel:modeltypes.ApiTypeModel,
+        rootNormalizedModel: modeltypes.ApiTypeModel,
+        leveledNormalizedModel: modeltypes.ApiTypeModel,
+        versionName: string,
+        currentFieldDesc: adltypes.fieldDesc,
+        errors: adltypes.errorList):void;
+
+    auto_convert_versioned_normalized(
+        rootVersioned: any,
+        leveledVersioned: any,
+        rootNormalized: any,
+        leveledNormalized: any,
+        rootVersionedModel:modeltypes.ApiTypeModel,
+        leveledVersionedModel:modeltypes.ApiTypeModel,
+        rootNormalizedModel: modeltypes.ApiTypeModel,
+        leveledNormalizedModel: modeltypes.ApiTypeModel,
+        versionName: string,
+        parent_field: adltypes.fieldDesc,
+        errors:  adltypes.errorList): void;
+
+    auto_convert_normalized_versioned(
+        rootVersioned: any,
+        versioned: any,
+        rootNormalized: any,
+        normalized: any,
+        rootNormalizedModel: modeltypes.ApiTypeModel,
+        normalizedApiTypeModel: modeltypes.ApiTypeModel,
+        rootVersionedModel: modeltypes.ApiTypeModel,
+        versionedTypeModel: modeltypes.ApiTypeModel,
+        versionName:string,
+        parent_field: adltypes.fieldDesc,
+        errors:  adltypes.errorList): void;
+}
 
 // runtime that interacts with a api model
 // runs conversion, validation, defaulting etc..
@@ -279,33 +333,6 @@ export interface ApiRuntime{
 
     create_normalized_instance(apiName: string, normalizedApiTypeName: string /* TODO: complete:bool i.e. fuzzed */ ): adltypes.Normalized;
     create_versioned_instance(apiName: string, versionName: string, versionedApiTypeName: string, /* TODO: complete:bool i.e. fuzzed */): adltypes.Versioned;
-
-    // only runs the auto converter logic
-    auto_convert_versioned_normalized(
-        rootVersioned: any,
-        leveledVersioned: any,
-        rootNormalized: any,
-        leveledNormalized: any,
-        rootVersionedModel:modeltypes.ApiTypeModel,
-        leveledVersionedModel:modeltypes.ApiTypeModel,
-        rootNormalizedModel: modeltypes.ApiTypeModel,
-        leveledNormalizedModel: modeltypes.ApiTypeModel,
-        versionName: string,
-        parent_field: adltypes.fieldDesc,
-        errors:  adltypes.errorList): void;
-
-    auto_convert_normalized_versioned(
-        rootVersioned: any,
-        versioned: any,
-        rootNormalized: any,
-        normalized: any,
-        rootNormalizedModel: modeltypes.ApiTypeModel,
-        normalizedApiTypeModel: modeltypes.ApiTypeModel,
-        rootVersionedModel: modeltypes.ApiTypeModel,
-        versionedTypeModel: modeltypes.ApiTypeModel,
-        versionName:string,
-        parent_field: adltypes.fieldDesc,
-        errors:  adltypes.errorList): void;
 }
 
 // api manager is a store that manages multiple apis

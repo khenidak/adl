@@ -2,22 +2,17 @@ import * as adltypes from '@azure-tools/adl.types'
 import * as machinerytypes from '../machinery.types'
 import * as modeltypes from '../../model/module'
 
-class ensuredGraph{
-    outModel: modeltypes.ApiTypeModel;
-    outPayload: any;
-}
 export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
     private ensureObjectGraph(context: machinerytypes.ConstraintExecContext,
                               jsonPath: string,
                               rootModel: modeltypes.ApiTypeModel,
-                              rootPayload:any): ensuredGraph{
+                              rootPayload:any): {outModel: modeltypes.ApiTypeModel; outPayload: any;}{
 
         let stepModel = rootModel;
         let stepPayload = rootPayload;
 
         const parts = jsonPath.split(".");
 
-        console.log(parts);
         const first = parts[0];
         if(first == `$`){ // special handling to the $ at the begining of the path
             const reminders = parts.slice(1); // cut
@@ -29,25 +24,19 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
         if(!stepPayload.hasOwnProperty(first)){
             stepPayload[first] = {}; // we always assume it is nested objects
         }
-        console.log(parts);
-        console.log(parts.slice(1));
-        console.log(parts.slice(1).length == 2)
-
         const reminders = parts.slice(1); // cut
         const newPath = reminders.join(".");
-        const isLast = (reminders.length == 2);
+        const isLast = (reminders.length == 1);
 
         if(!isLast){
             // work on the rest
-            context.opts.logger.verbose(`first:${first} originalPath:${jsonPath} path:${newPath}`);
-            stepModel = (stepModel.getProperty(first) as modeltypes.ApiTypePropertyModel).getComplexDataTypeOrThrow();
             stepPayload = stepPayload[first];
+            stepModel = (stepModel.getProperty(first) as modeltypes.ApiTypePropertyModel).getComplexDataTypeOrThrow();
             return this.ensureObjectGraph(context, newPath, stepModel, stepPayload);
         }
-
         return {
-            outModel: stepModel,
-            outPayload: stepPayload,
+            outModel: (stepModel.getProperty(first) as modeltypes.ApiTypePropertyModel).getComplexDataTypeOrThrow(),
+            outPayload: stepPayload[first],
         }
     }
 
@@ -59,7 +48,7 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
 
     ConvertToNormalized(
         context: machinerytypes.ConstraintExecContext,
-        r : machinerytypes.ApiRuntime,
+        r: machinerytypes.internal_converter,
         rootVersioned: any,
         leveledVersioned: any,
         rootNormalized: any,
@@ -69,9 +58,6 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
         rootNormalizedModel: modeltypes.ApiTypeModel,
         leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
         versionName: string): void{
-
-        // leveledTyped.hasOwnProperty(context.propertyName) return;
-        // if( leveledVersioned[context.propertyName] == undefined) return; // no source
 
         // for now we assume the path is valid, because once conformance framework is complete
         // each constraint will be validated
@@ -85,43 +71,64 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
         let actualLevelNormalized: any = ensured.outPayload;
 
 
-        console.log(actualLevelNormalized);
-        throw new Error("stop");
-        return;
         // preflight for same level copy
         if(!actualleveledNormalizedModel) return;
         if(!actualLevelNormalized) return;
 
         if(actualLevelNormalized.hasOwnProperty(toProp)){ // target already set
-                context.opts.logger.err(`MapTo converter found property ${toProp} already defined on the normalized and will not run`);
-                return;
+            context.opts.logger.err(`MoveTo converter found property ${toProp} already defined on the normalized and will not run`);
+             return;
         }
 
         const versionedP = leveledVersionedModel.getProperty(context.propertyName) as modeltypes.ApiTypePropertyModel;
         const normalizedP = actualleveledNormalizedModel.getProperty(toProp);
-
         /* this needs to be part of constraint validatrion */
         if(!normalizedP){
-            context.opts.logger.err(`MapTo converter failed to find property ${toProp} on normalized model ${actualleveledNormalizedModel.Name} and will not run`);
+            context.opts.logger.err(`MoveTo converter failed to find property ${toProp} on normalized model ${actualleveledNormalizedModel.Name} and will not run`);
             return;
         }
 
-
         // copy.
+        if(leveledVersioned[fromProp] == null){
+            actualLevelNormalized[toProp] = leveledVersioned[fromProp];
+            return;
+        }
+
+        // at this stage we need to match data type kinds, if they don't
+        // match, copy and bail out and let validation deal with the mismatch
+        if(versionedP.DataTypeKind != normalizedP.DataTypeKind){
+            actualLevelNormalized[toProp] = leveledVersioned[fromProp];
+            return;
+        }
+
         if(adltypes.isScalar(leveledVersioned[fromProp])){
             actualLevelNormalized[toProp] = leveledVersioned[fromProp];
             return;
         }
-/*
-        // TODO map
-        if(adltypes.isComplex(leveledVersioned[context.propertyName])){
-            leveledNormalized[context.propertyName] = {};
-            // run auto converter on object
+
+        if(adltypes.isComplex(leveledVersioned[fromProp])){
+            if(normalizedP.isMap()){
+                r.auto_convert_versioned_normalized_map(
+                    fromProp,
+                    rootVersioned,
+                    leveledVersioned[fromProp],
+                    rootNormalized,
+                    actualLevelNormalized[toProp],
+                    rootVersionedModel,
+                    normalizedP.getComplexDataTypeOrThrow(),
+                    rootNormalizedModel,
+                    actualleveledNormalizedModel,
+                    versionName,
+                    context.fieldPath,
+                    context.errors);
+                return;
+            }
+            // must be just a complex object
             r.auto_convert_versioned_normalized(
                 rootVersioned,
-                leveledVersioned[context.propertyName],
+                leveledVersioned[fromProp],
                 rootNormalized,
-                leveledNormalized[context.propertyName],
+                actualLevelNormalized[toProp],
                 rootVersionedModel,
                 normalizedP.getComplexDataTypeOrThrow(),
                 rootNormalizedModel,
@@ -132,41 +139,28 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
             return;
         }
 
-        if(adltypes.isArray(leveledVersioned[context.propertyName])){
-            leveledNormalized[context.propertyName] = [];
-            for(let i =0; i < leveledVersioned[context.propertyName].length; i++){
-                // create indexed field desc
-                const indexedFieldDesc = new adltypes.fieldDesc("", context.fieldPath);
-                indexedFieldDesc.index = i;
-                if(adltypes.isComplex(leveledVersioned[context.propertyName][i])){
-                    leveledNormalized[context.propertyName][i] = {};
-                    if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
-                        // run auto converter on object
-                        r.auto_convert_versioned_normalized(
-                            rootVersioned,
-                            leveledVersioned[context.propertyName][i],
-                            rootNormalized,
-                            leveledNormalized[context.propertyName][i],
-                            rootVersionedModel,
-                            normalizedP.getComplexDataTypeOrThrow(),
-                            rootNormalizedModel,
-                            actualleveledNormalizedModel,
-                            versionName,
-                            context.fieldPath,
-                            context.errors);
-                        }
-                }else{
-                        leveledNormalized[context.propertyName][i] = leveledVersioned[context.propertyName][i];
-                }
-            }
+        if(adltypes.isArray(leveledVersioned[fromProp])){
+             r.auto_convert_versioned_normalized_array(
+                fromProp,
+                rootVersioned,
+                actualLevelNormalized[fromProp],
+                rootNormalized,
+                leveledNormalized[toProp],
+                rootVersionedModel,
+                normalizedP.getComplexDataTypeOrThrow(),
+                rootNormalizedModel,
+                actualleveledNormalizedModel,
+                versionName,
+                context.fieldPath,
+                context.errors);
+            return;
         }
-    */
     }
 
 
     ConvertToVersioned(
         context: machinerytypes.ConstraintExecContext,
-        r : machinerytypes.ApiRuntime,
+        r: machinerytypes.internal_converter,
         rootVersioned: any,
         leveledVersioned: any,
         rootNormalized: any,
