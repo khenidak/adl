@@ -2,6 +2,14 @@ import * as adltypes from '@azure-tools/adl.types'
 import * as machinerytypes from '../machinery.types'
 import * as modeltypes from '../../model/module'
 
+//TODO: @khenidak review when value is map
+function getValueForProp(context: machinerytypes.ConstraintExecContext,
+                         leveledTyped:any,
+                          leveledApiTypeModel: modeltypes.ApiTypeModel, isMapKey:boolean):any{
+    if(isMapKey) return leveledTyped;
+    return leveledTyped[context.propertyName]
+}
+
 export class MustMatchImpl implements machinerytypes.ValidationConstraintImpl{
     Run(
         context: machinerytypes.ConstraintExecContext,
@@ -13,7 +21,7 @@ export class MustMatchImpl implements machinerytypes.ValidationConstraintImpl{
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean{
 
-       const propVal = leveledTyped[context.propertyName];
+       const propVal = getValueForProp(context,leveledTyped, leveledApiTypeModel, isMapKey);
        let regExp = context.ConstraintArgs[0];
        regExp = regExp.replace(/\\\\/g, '\\');
        let ignoreCase = JSON.parse(context.ConstraintArgs[1]);

@@ -1102,14 +1102,15 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                             errors);
 
                     }else{
-                        if(leveled[p.Name][i] != undefined && p.DataTypeName != (typeof leveled[p.Name][i])){
-                            errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected ${p.DataTypeName}`, currentFieldDesc));
+                       const elementModel = elementDataTypeModel as modeltypes.PropertySimpleArrayDataType;
+                        if(leveled[p.Name][i] != null && elementModel.ElementDataTypeName != (typeof leveled[p.Name][i])){
+                            errors.push(machinerytypes.createValidationError(`field ${p.Name} is invalid. Expected ${p.DataTypeName}`, indexedFieldDesc));
                             continue;
                         }
 
                         // run array elements constraint
-                        const elementValidationConstraints =  p.getArrayElementValidationConstraints();
-                        for(let c of validationConstraints){
+                        const elementValidationConstraints =  elementModel.ElementValidationConstraints;
+                        for(let c of elementValidationConstraints){
                             const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
                             const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, p.Name, indexedFieldDesc,errors);
                                 implementation.Run(
@@ -1119,8 +1120,8 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                                     existingRoot,
                                     (existingLeveled && existingLeveled[p.Name].length > i ) ? existingLeveled[p.Name][i]: undefined,
                                     rootApiTypeModel,
-                                    p.getComplexDataTypeOrThrow(),
-                                    false);
+                                    leveledApiTypeModel,
+                                    true);
                         }
                     }
                 }

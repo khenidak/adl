@@ -981,17 +981,17 @@ function createPropertyDataType(containerType: Type,
                                           opts);
     };
     if(appeared_t.isArray()){
-        const element_appeared_t = appeared_t.getArrayElementType();
-        if(!element_appeared_t){
+        const element_t = appeared_t.getArrayElementType();
+        if(!element_t){
             const message = `unable to identify data type array element for property ${p.getName()} of ${nameOfContainer}`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
             return undefined;
         }
 
-        const element_t = getPropertyTrueType(containerDeclaration, containerType, element_appeared_t);
+        const element_appeared_t = getPropertyTrueType(containerDeclaration, containerType, element_t);
         // arrays of any are not allowed
-        if(element_t.isAny()){
+        if(element_appeared_t.isAny()){
             const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, any is not allowed`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
@@ -999,7 +999,7 @@ function createPropertyDataType(containerType: Type,
         }
 
         // array of arrays are not allowed
-        if(element_t.isArray()){
+        if(element_appeared_t.isArray()){
             const message = `invalid data type array element for property ${p.getName()} of ${nameOfContainer}, array of arrays is not allowed`
             opts.logger.err(message);
             errors.push(helpers.createLoadError(message));
@@ -1011,7 +1011,7 @@ function createPropertyDataType(containerType: Type,
             return undefined;
 
         // basic type is cool
-        if(element_t.isString() || element_t.isNumber() || helpers.isBoolean(element_t)){
+        if(element_appeared_t.isString() || element_appeared_t.isNumber() || helpers.isBoolean(element_appeared_t)){
             opts.logger.verbose(`property ${p.getName()} of ${nameOfContainer} is idenfined as simple array`);
             return new property_SimpleArrayDataType(
                                             element_appeared_t,
@@ -1024,8 +1024,8 @@ function createPropertyDataType(containerType: Type,
                                             opts);
         }
 
-        if(element_t.isClassOrInterface() || element_t.isIntersection()){
-            const dataTypeName = element_t.getSymbolOrThrow().getName();
+        if(element_appeared_t.isClassOrInterface() || element_appeared_t.isIntersection()){
+            const dataTypeName = element_appeared_t.getSymbolOrThrow().getName();
             // map, sets, arrays, adlmaps are not allowed
             if(dataTypeName == "Map" || dataTypeName == "Set" || dataTypeName == "Array" || dataTypeName == adltypes.ADL_MAP_TYPENAME){
                 const message = `element data type for array ${p.getName()} of ${nameOfContainer} is invalid. maps, sets, arrays, adl maps are not allowed`

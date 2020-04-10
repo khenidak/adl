@@ -1,37 +1,39 @@
 {
-  "etag": "",
-  "id": "/SUBSCRIPTIONS/d3f20976-17ab-4f77-a99b-a64552938998/RESOURCEGROUPS/cairo/providers/microsoft.compute/virtualmachine/vm1",
-  "location": "",
-  "name": "myvm",
-  "properties": {
-    "coreCount": 100,
-    "dataDisks": [
-      {
-        "diskId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.disks/disks/disk1"
-      }
-    ],
-    "hardwareProfile": {
-      "vmSize": "StandardDS_v3"
+    "etag": "",
+    "id": "/SUBSCRIPTIONS/d3f20976-17ab-4f77-a99b-a64552938998/RESOURCEGROUPS/cairo/providers/microsoft.compute/virtualmachine/vm1",
+    "location": "",
+    "name": "myvm",
+    "type": "virtualmachine",
+    "resourceGroup": "myresourcegroup",
+    "tags": {
+        "key1": "val1",
+        "key2": "val2"
     },
-    "networkCards": {
-      "third": {
-        "networkCardId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.network/network-card/card1"
-      }
-    },
-    "storageProfile": {
-      "offer": "offer field value",
-      "publisher": "publisher field value",
-      "sku": "sku field value",
-      "version": "version field value"
-    },
-    "v1Prop": 9,
-    "v3Prop": 15,
-    "vmId": "str"
-  },
-  "resourceGroup": "myresourcegroup",
-  "tags": {
-    "key1": "val1",
-    "key2": "val2"
-  },
-  "type": "virtualmachine"
+    "properties": {
+        "coreCount": 100,
+        "dataDisks": [
+            {
+                "diskId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.disks/disks/disk1"
+            }
+        ],
+        "hardwareProfile": {
+            "vmSize": "StandardDS_v3"
+        },
+        "networkCards": {
+            "third": {
+                "networkCardId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.network/network-card/card1"
+            }
+        },
+        "specials": [
+            "special"
+        ],
+        "storageProfile": {
+            "offer": "offer field value",
+            "publisher": "publisher field value",
+            "sku": "sku field value",
+            "version": "version field value"
+        },
+        "v1Prop": 9,
+        "vmId": "str"
+    }
 }

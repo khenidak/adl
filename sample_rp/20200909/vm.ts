@@ -15,6 +15,7 @@
 import * as adltypes from '@azure-tools/adl.types'
 import * as armtypes from '@azure-tools/arm.adl'
 
+type somethingSpecial = string & adltypes.MustMatch<'^s', true>;
 
 export interface VirtualMachineProps{
     /**
@@ -51,6 +52,8 @@ export interface VirtualMachineProps{
     *  @prop_tag2 also, consumer can ensure documentation conformation for example mandatory tags
     */
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
+
+    specials: somethingSpecial[];
 }
 
 export interface HWProfile {
