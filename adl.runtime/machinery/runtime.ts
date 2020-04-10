@@ -42,95 +42,109 @@ export class InvalidApiTypeModel extends Error {
 export class apiRuntime implements machinerytypes.ApiRuntime{
     constructor(private store: machinerytypes.ApiManager, private machinery: machinerytypes.ApiMachinery, private opts: modeltypes.apiProcessingOptions){}
 
+    auto_convert_versioned_normalized_map(
+            versionedP: modeltypes.ApiTypePropertyModel,
+            normalizedP: modeltypes.ApiTypePropertyModel,
+            rootVersioned: any,
+            leveledVersioned: any,
+            rootNormalized: any,
+            leveledNormalized: any,
+            rootVersionedModel:modeltypes.ApiTypeModel,
+            leveledVersionedModel:modeltypes.ApiTypeModel,
+            rootNormalizedModel: modeltypes.ApiTypeModel,
+            leveledNormalizedModel: modeltypes.ApiTypeModel,
+            versionName: string,
+            currentFieldDesc: adltypes.fieldDesc,
+            errors:  adltypes.errorList): void{
 
-    private run_convertion_constraints_versioned_normalized(
-        rootVersioned: any,
-        leveledVersioned: any,
-        rootNormalized: any,
-        leveledNormalized: any | undefined,
-        rootVersionedModel:modeltypes.ApiTypeModel,
-        leveledVersionedModel:modeltypes.ApiTypeModel,
-        rootNormalizedModel: modeltypes.ApiTypeModel,
-        leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
-        versionName: string,
-        parent_field: adltypes.fieldDesc,
-        errors:  adltypes.errorList):void{
-        for (let propertyName of Object.keys(leveledVersioned)){
-            const currentFieldDesc =  new adltypes.fieldDesc(propertyName, parent_field);
-            const versionedP = leveledVersionedModel.getProperty(propertyName) as modeltypes.ApiTypePropertyModel;
-            const conversionConstraints = versionedP.getConversionConstraints();
-            for(const c of conversionConstraints){
-                const impl = this.machinery.getConversionConstraintImplementation(c.Name);
-                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, propertyName, currentFieldDesc,errors);
-                impl.ConvertToNormalized(
-                    ctx,
-                    this,
-                    rootVersioned,
-                    leveledVersioned,
-                    rootNormalized,
-                    leveledNormalized,
-                    rootVersionedModel,
-                    leveledVersionedModel,
-                    rootNormalizedModel,
-                    leveledNormalizedModel,
-                    versionName);
+          // assumptions:
+          // null is prechecked
+          // target object {} is already created
+          // target and src props already exist
+          for(const key of Object.keys(leveledVersioned[versionedP.Name])){
+            if(leveledVersioned[versionedP.Name][key] == null){
+                leveledNormalized[normalizedP.Name][key] = leveledVersioned[versionedP.Name][key];
+                continue;
+            }
+            if(adltypes.isScalar(leveledVersioned[versionedP.Name][key])){
+                leveledNormalized[normalizedP.Name][key] = leveledVersioned[versionedP.Name][key];
+                continue;
+            }
+            // input must be a complx object
+            // if target is not complex map then copy as is
+            if(normalizedP.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexMap){
+                leveledNormalized[normalizedP.Name][key] = leveledVersioned[versionedP.Name][key];
+                continue;
             }
 
+            // if target is a complex map
+            leveledNormalized[normalizedP.Name][key] = {};
+            this.opts.logger.info(`auto-normalize: attempting to process property ${versionedP.Name} as complex map`);
+            const walkField =  new adltypes.fieldDesc(key, currentFieldDesc);
+            this.auto_convert_versioned_normalized(
+                rootVersioned,
+                leveledVersioned[versionedP.Name][key],
+                rootNormalized,
+                leveledNormalized[normalizedP.Name][key],
+                rootVersionedModel,
+                versionedP.getComplexDataTypeOrThrow(),
+                rootNormalizedModel,
+                normalizedP.getComplexDataTypeOrThrow(),
+                versionName,
+                walkField,
+                errors);
+        }
+    }
 
-            if(adltypes.isComplex(leveledVersioned[propertyName])){
-                if(versionedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
-                    this.run_convertion_constraints_versioned_normalized(
+    auto_convert_versioned_normalized_array(
+            versionedP: modeltypes.ApiTypePropertyModel,
+            normalizedP: modeltypes.ApiTypePropertyModel,
+            rootVersioned: any,
+            leveledVersioned: any,
+            rootNormalized: any,
+            leveledNormalized: any,
+            rootVersionedModel:modeltypes.ApiTypeModel,
+            leveledVersionedModel:modeltypes.ApiTypeModel,
+            rootNormalizedModel: modeltypes.ApiTypeModel,
+            leveledNormalizedModel: modeltypes.ApiTypeModel,
+            versionName: string,
+            currentFieldDesc: adltypes.fieldDesc,
+            errors:  adltypes.errorList): void{
+
+          // assumptions:
+          // null is prechecked
+          // target object [] is already created
+          // target and src props already exist
+         for(let i =0; i < leveledVersioned[versionedP.Name].length; i++){
+            // create indexed field desc
+            const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
+            indexedFieldDesc.index = i;
+            // here we have to copy anyway to maintain array size. (versioned.len == normalized.len)
+            // even if they are not equal data types (validation will validate it).
+            if(adltypes.isComplex(leveledVersioned[versionedP.Name][i])){
+                leveledNormalized[versionedP.Name][i] = {};
+                if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
+                    this.auto_convert_versioned_normalized(
                         rootVersioned,
-                        leveledVersioned[propertyName],
+                        leveledVersioned[versionedP.Name][i],
                         rootNormalized,
-                        leveledNormalized ? leveledNormalized[propertyName] : undefined,
+                        leveledNormalized[normalizedP.Name][i],
                         rootVersionedModel,
                         versionedP.getComplexDataTypeOrThrow(),
                         rootNormalizedModel,
-                        leveledNormalizedModel ? leveledNormalizedModel.getProperty(propertyName)?.getComplexDataTypeOrThrow() : undefined,
+                        normalizedP.getComplexDataTypeOrThrow(),
                         versionName,
-                        currentFieldDesc,
+                        indexedFieldDesc,
                         errors);
+                }else{
+                    leveledNormalized[normalizedP.Name][i] = leveledVersioned[versionedP.Name][i];
                     continue;
                 }
-
-                // process complex map
-                if(versionedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexMap){
-                    for(const key of Object.keys(leveledVersioned[propertyName])){
-                        const walkField =  new adltypes.fieldDesc(key, currentFieldDesc);
-                        let leveledNormalizedValue:any | undefined = undefined;
-                        let currentNormalizedModel:  modeltypes.ApiTypeModel | undefined = undefined;
-                        if(leveledNormalized &&  leveledNormalized[propertyName] && leveledNormalized[propertyName][key]){
-                            leveledNormalizedValue = leveledNormalized[propertyName][key];
-                        }
-                        // TODO: this will be changed as we model properties and property data type the right way
-                        if(leveledNormalizedModel != undefined &&
-                           leveledNormalizedModel.getProperty(propertyName) != undefined &&
-                           leveledNormalizedModel.getProperty(propertyName)?.getComplexDataTypeOrThrow().getProperty(key) != undefined){
-                           const leveldP = (leveledNormalizedModel as modeltypes.ApiTypeModel).getProperty(propertyName) as modeltypes.ApiTypePropertyModel;
-                           const leveledKeydP = leveldP.getComplexDataTypeOrThrow().getProperty(key) as modeltypes.ApiTypePropertyModel;
-                           currentNormalizedModel = leveledKeydP.getComplexDataTypeOrThrow();
-                        }
-
-                        this.run_convertion_constraints_versioned_normalized(
-                            rootVersioned,
-                            leveledVersioned[propertyName][key],
-                            rootNormalized,
-                            leveledNormalizedValue,
-                            rootVersionedModel,
-                            versionedP.getComplexDataTypeOrThrow(),
-                            rootNormalizedModel,
-                            currentNormalizedModel,
-                            versionName,
-                            walkField,
-                            errors);
-                    }
-                    continue;
-                }
-
-            // we don't run through arrays in ConversionConstraints
+            }else{
+                leveledNormalized[normalizedP.Name][i] = leveledVersioned[versionedP.Name][i];
+                continue;
             }
-        }
+          }
     }
     // runs auto conversion process. the auto conversion process walks
     // the object graph and find:
@@ -160,88 +174,95 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 continue; // keep going
             }
 
+            // execute conversion constraint, we always assume max of conversion constraint.
+            const conversionConstraints = versionedP.getConversionConstraints();
+            let c = (conversionConstraints.length > 0) ? conversionConstraints[0] : undefined;
+            let target_changed = undefined;
+            if(c != undefined){
+                const impl = this.machinery.getConversionConstraintImplementation(c.Name);
+                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, propertyName, currentFieldDesc,errors);
+                target_changed = impl.ConvertToNormalized(
+                    ctx,
+                    this,
+                    rootVersioned,
+                    leveledVersioned,
+                    rootNormalized,
+                    leveledNormalized,
+                    rootVersionedModel,
+                    leveledVersionedModel,
+                    rootNormalizedModel,
+                    leveledNormalizedModel,
+                    versionName);
+            }
+
             // no auto conversion?
             if(versionedP.isManaullyConverted){
-                this.opts.logger.verbose(`auto-normalize: property ${leveledVersionedModel.Name}/${propertyName} is marked for NoAutoConvert, ignoring`);
+                this.opts.logger.verbose(`auto-normalize: property ${leveledVersionedModel.Name}/${versionedP.Name} is marked for NoAutoConvert, ignoring`);
                 continue;
             }
 
-            const normalizedP = leveledNormalizedModel.getProperty(propertyName);
-            if(normalizedP == undefined){
-                this.opts.logger.info(`auto-normalize: property ${leveledVersionedModel.Name}/${propertyName} does not exist in normalized model ${leveledNormalizedModel.Name}, ignoring`);
+            // conversion came back with different model then use it
+            // otherwise use what we have
+            const actual_normalizedP = (target_changed != undefined) ? target_changed.targetProperty : leveledNormalizedModel.getProperty(versionedP.Name);
+            const actual_leveledNormalizedModel = (target_changed != undefined) ? target_changed.targetModel : leveledNormalizedModel;
+
+            if(actual_normalizedP == undefined){
+                this.opts.logger.info(`auto-normalize: property ${leveledVersionedModel.Name}/${versionedP.Name} does not exist in normalized model ${leveledNormalizedModel.Name}, ignoring`);
                 continue; // this property does not exist in normalized
-             }
+            }
 
             // match data types for models
-            if(versionedP.DataTypeKind != normalizedP.DataTypeKind){
-                this.opts.logger.info(`auto-normalize: property ${propertyName} has different DataTypeKind on versioned and normalized models, ignoring`);
+            if(versionedP.DataTypeKind != actual_normalizedP.DataTypeKind){
+                this.opts.logger.wrn(`auto-normalize: property ${versionedP.Name} has different DataTypeKind on versioned and normalized models, copying anyway`);
+                leveledNormalized[actual_normalizedP.Name] = leveledVersioned[versionedP.Name];
                 continue;
             }
 
             // if it is null copy as is
             if(leveledVersioned[propertyName] == null){
                  this.opts.logger.verbose(`auto-normalize: property ${propertyName} copied as null value`);
-                leveledNormalized[propertyName] = leveledVersioned[propertyName];
+                leveledNormalized[actual_normalizedP.Name] = leveledVersioned[versionedP.Name];
                 continue;
             }
 
             //copy as as scalar
             if(adltypes.isScalar(leveledVersioned[propertyName])){
-                leveledNormalized[propertyName] = leveledVersioned[propertyName];
+                leveledNormalized[actual_normalizedP.Name] = leveledVersioned[versionedP.Name];
                 continue;
             }
 
             // run it as an object
-            if(adltypes.isComplex(leveledVersioned[propertyName])){
-                leveledNormalized[propertyName] = {}; // define empty object, we can do that comfortably here because we check for nulls
-                if(normalizedP.isMap()){
-                    for(const key of Object.keys(leveledVersioned[propertyName])){
-                        if(leveledVersioned[propertyName][key] == null){
-                            leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
-                            continue;
-                        }
-                        if(adltypes.isScalar(leveledVersioned[propertyName][key])){
-                            leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
-                            continue;
-                        }
-                        // input must be a complx object
-                        // if target is not complex map then copy as is
-                        if(normalizedP.DataTypeKind != modeltypes.PropertyDataTypeKind.ComplexMap){
-                            leveledNormalized[propertyName][key] = leveledVersioned[propertyName][key];
-                            continue;
-                        }
-
-                        // if target is a complex map
-                        leveledNormalized[propertyName][key] = {};
-                        this.opts.logger.info(`auto-normalize: attempting to process property ${propertyName} as complex map`);
-                        const walkField =  new adltypes.fieldDesc(key, currentFieldDesc);
-                        this.auto_convert_versioned_normalized(
-                                rootVersioned,
-                                leveledVersioned[propertyName][key],
-                                rootNormalized,
-                                leveledNormalized[propertyName][key],
-                                rootVersionedModel,
-                                versionedP.getComplexDataTypeOrThrow(),
-                                rootNormalizedModel,
-                                normalizedP.getComplexDataTypeOrThrow(),
-                                versionName,
-                                walkField,
-                                errors);
-                        continue;
-                    }
-               }
+            if(adltypes.isComplex(leveledVersioned[versionedP.Name])){
+                leveledNormalized[actual_normalizedP.Name] = {}; // define empty object, we can do that comfortably here because we check for nulls
+                if(actual_normalizedP.isMap()){
+                    this.auto_convert_versioned_normalized_map(
+                        versionedP,
+                        actual_normalizedP,
+                        rootVersioned,
+                        leveledVersioned,
+                        rootNormalized,
+                        leveledNormalized,
+                        rootVersionedModel,
+                        leveledVersionedModel,
+                        rootNormalizedModel,
+                        actual_leveledNormalizedModel,
+                        versionName,
+                        currentFieldDesc,
+                        errors);
+                    continue;
+                }
 
                 // if target is complex then process
-               if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
+               if(actual_normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
                     this.auto_convert_versioned_normalized(
                         rootVersioned,
-                        leveledVersioned[propertyName],
+                        leveledVersioned[versionedP.Name],
                         rootNormalized,
-                        leveledNormalized[propertyName],
+                        leveledNormalized[actual_normalizedP.Name],
                         rootVersionedModel,
                         versionedP.getComplexDataTypeOrThrow(),
                         rootNormalizedModel,
-                        normalizedP.getComplexDataTypeOrThrow(),
+                        actual_normalizedP.getComplexDataTypeOrThrow(),
                         versionName,
                         currentFieldDesc,
                         errors);
@@ -249,44 +270,29 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 }
 
                 // we don't know what is that, copy as is, let the validation deal with it
-                leveledNormalized[propertyName] = leveledVersioned[propertyName];
+                leveledNormalized[actual_normalizedP.Name] = leveledVersioned[versionedP.Name];
                 continue;
             }
 
-        if(adltypes.isArray(leveledVersioned[propertyName])){
-            leveledNormalized[propertyName] = [];
-            for(let i =0; i < leveledVersioned[propertyName].length; i++){
-                // create indexed field desc
-                const indexedFieldDesc = new adltypes.fieldDesc("", currentFieldDesc);
-                indexedFieldDesc.index = i;
-                // here we have to copy anyway to maintain array size. (versioned.len == normalized.len)
-                // even if they are not equal data types (validation will validate it).
-                if(adltypes.isComplex(leveledVersioned[propertyName][i])){
-                    leveledNormalized[propertyName][i] = {};
-                    if(normalizedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
-                        this.auto_convert_versioned_normalized(
-                            rootVersioned,
-                            leveledVersioned[propertyName][i],
-                            rootNormalized,
-                            leveledNormalized[propertyName][i],
-                            rootVersionedModel,
-                            versionedP.getComplexDataTypeOrThrow(),
-                            rootNormalizedModel,
-                            normalizedP.getComplexDataTypeOrThrow(),
-                            versionName,
-                            indexedFieldDesc,
-                            errors);
-                    }else{
-                        leveledNormalized[propertyName][i] = leveledVersioned[propertyName][i];
-                        continue;
-                    }
-                }else{
-                    leveledNormalized[propertyName][i] = leveledVersioned[propertyName][i];
-                    continue;
-                }
-            }
+        if(adltypes.isArray(leveledVersioned[versionedP.Name])){
+            leveledNormalized[actual_normalizedP.Name] = [];
+            this.auto_convert_versioned_normalized_array(
+                versionedP,
+                actual_normalizedP,
+                rootVersioned,
+                leveledVersioned,
+                rootNormalized,
+                leveledNormalized,
+                rootVersionedModel,
+                leveledVersionedModel,
+                rootNormalizedModel,
+                actual_leveledNormalizedModel,
+                versionName,
+                currentFieldDesc,
+                errors);
+             continue;
         }
-      }
+     }
 
      // check for missing keys. shallow per each object
      if(Object.keys(leveledVersioned).length != leveledVersionedModel.Properties.length){
@@ -327,7 +333,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
             if(errors.length > 0)
                 return normalized; // can't go to next phase without clean errors
-
+/*
             // run conversion constraints
             this.run_convertion_constraints_versioned_normalized(
                 versioned,
@@ -341,7 +347,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 versionName,
                 parent_field,
                 errors);
-
+*/
         // run the imperative versioner
         if(versionedTypeModel.VersionerName == adltypes.AUTO_VERSIONER_NAME) return;
 

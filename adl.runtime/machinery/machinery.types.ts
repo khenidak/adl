@@ -201,7 +201,7 @@ export interface ConversionConstraintImpl{
         leveledVersionedModel:modeltypes.ApiTypeModel,
         rootNormalizedModel: modeltypes.ApiTypeModel,
         leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
-        versionName: string):void;
+        versionName: string): {targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel} | undefined;
 
     // called on the constraint when the conversion
     // is normalized => versioned

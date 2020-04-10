@@ -4,5 +4,4 @@
 
 export * from './validation'
 export * from './defaulting'
-export * from './conversion'
-
+export * from './conversion/module'
