@@ -91,8 +91,8 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         const val7i = new constraints.MultipleOfImpl();
         adlcore.validationImplementations.set("MultipleOf", val7i);
 
-        const conv1i = new constraints.MapToImpl();
-        adlcore.conversionImplementations.set("MapTo", conv1i);
+        const conv1i = new constraints.RenameToImpl();
+        adlcore.conversionImplementations.set("RenameTo", conv1i);
 
         return adlcore;
     }

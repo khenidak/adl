@@ -12,7 +12,7 @@
             }
         ],
         "hardwareProfile": {
-            "virtualMachineSize": "StandardDS_v3"
+            "virtualMachineSize": "StandardDS_v35"
         },
         "networkCards": {
             "third": {

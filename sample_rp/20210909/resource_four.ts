@@ -23,7 +23,7 @@ export class ResourceFour{
     // here i am using the declarative approach (MapTo)
     // i can also use Normalize() and Convert and use imperative
     // approach. Declarative is always prefered.
-    prop4Ex: string &  adltypes.MapTo<'prop4'>;
+    prop4Ex: string &  adltypes.RenameTo<'prop4'>;
 
 
     // notice how we are not listing any possible value

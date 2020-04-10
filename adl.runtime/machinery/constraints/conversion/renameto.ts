@@ -3,36 +3,26 @@ import * as machinerytypes from '../../machinery.types'
 import * as modeltypes from '../../../model/module'
 
 
-export class MapToImpl implements machinerytypes.ConversionConstraintImpl{
+export class RenameToImpl implements machinerytypes.ConversionConstraintImpl{
     ConvertToNormalized(
         context: machinerytypes.ConstraintExecContext,
-        r : machinerytypes.ApiRuntime,
         rootVersioned: any,
         leveledVersioned: any,
         rootNormalized: any,
-        leveledNormalized: any | undefined,
+        leveledNormalized: any,
         rootVersionedModel:modeltypes.ApiTypeModel,
         leveledVersionedModel:modeltypes.ApiTypeModel,
         rootNormalizedModel: modeltypes.ApiTypeModel,
-        leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
-        versionName: string): {targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel} | undefined {
+        leveledNormalizedModel: modeltypes.ApiTypeModel,
+        versionName: string):{targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel, target:any} | undefined {
 
         const to = context.ConstraintArgs[0] as string;
         // preflight
-        if(leveledVersioned[context.propertyName] == undefined) return undefined; // no source
+        if(!leveledVersioned.hasOwnProperty(context.propertyName)) return undefined; // no source
 
-        //for now we only support same level
-        if(to.charAt(0) == "$")
-            throw new Error("json path is not implemented yet");
-
-        // preflight for same level copy
+       // preflight for same level copy
         if(!leveledNormalized) return  undefined;
         if(!leveledNormalizedModel) return undefined;
-
-        if(leveledNormalized[to] != undefined){ // target already set
-                context.opts.logger.err(`MapTo converter found property ${to} already defined on the normalized and will not run`);
-                return undefined;
-        }
 
         const versionedP = leveledVersionedModel.getProperty(context.propertyName) as modeltypes.ApiTypePropertyModel;
         const normalizedP = leveledNormalizedModel.getProperty(to)
@@ -41,102 +31,37 @@ export class MapToImpl implements machinerytypes.ConversionConstraintImpl{
             context.opts.logger.err(`MapTo converter failed to find property ${to} on ${leveledNormalizedModel.Name} and will not run`);
             return undefined;
         }
-        return {targetModel:leveledNormalizedModel, targetProperty: normalizedP};
+        return {targetModel:leveledNormalizedModel, targetProperty: normalizedP, target:leveledNormalized};
     }
 
 
     ConvertToVersioned(
         context: machinerytypes.ConstraintExecContext,
-        r : machinerytypes.ApiRuntime,
         rootVersioned: any,
         leveledVersioned: any,
         rootNormalized: any,
-        leveledNormalized: any | undefined,
+        leveledNormalized: any,
         rootVersionedModel:modeltypes.ApiTypeModel,
         leveledVersionedModel:modeltypes.ApiTypeModel,
         rootNormalizedModel: modeltypes.ApiTypeModel,
-        leveledNormalizedModel: modeltypes.ApiTypeModel | undefined,
-        versionName: string){
+        leveledNormalizedModel: modeltypes.ApiTypeModel,
+        versionName: string) : {targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel,target:any} | undefined {
 
-        const to = context.ConstraintArgs[0] as string;
+        const fromProp = context.ConstraintArgs[0] as string;
         // preflight
-        if(leveledNormalized[to] == undefined) return; // no source
-
-        //for now we only support same level
-        if(to.charAt(0) == "$")
-            throw new Error("json path is not implemented yet");
+        if(!leveledNormalized.hasOwnProperty(fromProp)) return undefined; // no source
 
         // preflight for same level copy
-        if(!leveledNormalized) return;
-        if(!leveledNormalizedModel) return;
-
-        if(leveledVersioned[context.propertyName] != undefined){ // target already set
-                context.opts.logger.err(`MapTo converter found property ${to} already defined on the normalized and will not run`);
-                return;
-        }
+        if(!leveledNormalized) return undefined;
+        if(!leveledNormalizedModel) return undefined;
 
         const versionedP = leveledVersionedModel.getProperty(context.propertyName) as modeltypes.ApiTypePropertyModel;
-        const normalizedP = leveledNormalizedModel.getProperty(to)
+        const normalizedP = leveledNormalizedModel.getProperty(fromProp);
 
         if(!normalizedP){
-            context.opts.logger.err(`MapTo converter failed to find property ${to} on ${leveledNormalizedModel.Name} and will not run`);
-            return;
+            context.opts.logger.err(`MapTo converter failed to find property ${fromProp} on ${leveledNormalizedModel.Name} and will not run`);
+            return undefined;
         }
-
-     // copy.
-
-        if(adltypes.isScalar(leveledNormalized[to]) && versionedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Scalar){
-            leveledVersioned[context.propertyName] = leveledNormalized[to];
-            return;
-        }
-
-        if(adltypes.isComplex(leveledNormalized[to]) && versionedP.DataTypeKind == modeltypes.PropertyDataTypeKind.Complex){
-            leveledVersioned[context.propertyName] = {};
-            // run auto converter on object
-            r.auto_convert_normalized_versioned(
-                rootVersioned,
-                leveledVersioned[context.propertyName],
-                rootNormalized,
-                leveledNormalized[context.propertyName],
-                rootVersionedModel,
-                normalizedP.getComplexDataTypeOrThrow(),
-                rootNormalizedModel,
-                leveledNormalizedModel,
-                versionName,
-                context.fieldPath,
-                context.errors);
-            return;
-        }
-
-
-        if(adltypes.isArray(leveledNormalized[to])){
-            leveledVersioned[context.propertyName] = [];
-            for(let i =0; i < leveledNormalized[to].length; i++){
-                // create indexed field desc
-                const indexedFieldDesc = new adltypes.fieldDesc("", context.fieldPath);
-                indexedFieldDesc.index = i;
-                if(adltypes.isComplex(leveledNormalized[to][i])){
-                    leveledVersioned[context.propertyName][i] = {};
-
-                    if(versionedP.DataTypeKind == modeltypes.PropertyDataTypeKind.ComplexArray){
-                        // run auto converter on object
-                        r.auto_convert_normalized_versioned(
-                            rootVersioned,
-                            leveledVersioned[context.propertyName][i],
-                            rootNormalized,
-                            leveledNormalized[context.propertyName][i],
-                            rootVersionedModel,
-                            normalizedP.getComplexDataTypeOrThrow(),
-                            rootNormalizedModel,
-                            leveledNormalizedModel,
-                            versionName,
-                            context.fieldPath,
-                            context.errors);
-                        }
-                }else{
-                        leveledVersioned[context.propertyName][i] = leveledNormalized[to][i];
-                }
-            }
-        }
+        return {targetModel:leveledNormalizedModel, targetProperty: normalizedP, target: leveledNormalized};
     }
 }

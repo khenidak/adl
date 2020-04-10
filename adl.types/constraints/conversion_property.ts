@@ -6,4 +6,4 @@ import { ConversionConstraint } from './types'
 // normalized => versioned
 
 // maps the property from one location to another
-export interface MapTo<sourceNameOrJPath extends string> extends ConversionConstraint{}
+export interface RenameTo<sourceNameOrJPath extends string> extends ConversionConstraint{}

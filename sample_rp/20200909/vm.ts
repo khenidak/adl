@@ -40,7 +40,7 @@ export interface VirtualMachineProps{
              adltypes.MultipleOf<3> &
              adltypes.MultipleOf<5>;
 
-    coreCount: number & adltypes.MapTo<'totalCores'>;
+    coreCount: number & adltypes.RenameTo<'totalCores'>;
 
     /**
     *  this is another property documentation, i can here describe the property for user facing doc. I can also
@@ -57,7 +57,7 @@ export interface VirtualMachineProps{
 }
 
 export interface HWProfile {
-    vmSize: string & adltypes.MapTo<'virtualMachineSize'>;
+    vmSize: string & adltypes.RenameTo<'virtualMachineSize'>;
 }
 
 export interface ImageReference{

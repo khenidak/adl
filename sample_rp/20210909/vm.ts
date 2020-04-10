@@ -23,7 +23,7 @@ export interface VirtualMachine extends vPrev.VirtualMachineProps{
     badProp: string;
     v1Prop: number & adltypes.Removed; // <== removed
     v2Prop?: string // <== new;
-    some_new_prop: number & adltypes.MapTo<'someProp'>;// This prop is renamed, we still don't need imperative logic
+    some_new_prop: number & adltypes.RenameTo<'someProp'>;// This prop is renamed, we still don't need imperative logic
 }
 
 // for this resource we want to envelop it in ARM. so we are doing this:
