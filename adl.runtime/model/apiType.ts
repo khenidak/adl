@@ -47,7 +47,7 @@ export class api_type implements modeltypes.ApiTypeModel{
 
     get Name():string{return this._name;}
 
-    get Properties(): Iterable<modeltypes.ApiTypePropertyModel> {
+    get Properties(): Array<modeltypes.ApiTypePropertyModel> {
         var infos = new Array<modeltypes.ApiTypePropertyModel>();
 
         for(let [k,v] of this._properties)

@@ -48,7 +48,7 @@ export interface ApiTypeModel extends loadableObject{
     readonly Name: string;
     readonly Docs: ApiJsDoc | undefined;
 
-    readonly Properties: Iterable<ApiTypePropertyModel>;
+    readonly Properties: Array<ApiTypePropertyModel>;
     readonly Constraints:Array<ConstraintModel>;
 
     getProperty(propertyName: string): ApiTypePropertyModel | undefined;
