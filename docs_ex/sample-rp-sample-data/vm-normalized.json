@@ -8,7 +8,7 @@
         "dataDisks": [
             {
                 "diskId": "/subscriptions/d3f20976-17ab-4f77-a99b-a64552938998/resourcegroups/cairo/providers/microsoft.disks/disks/disk1",
-		"isSSD": true
+                "isSSD": true
             }
         ],
         "hardwareProfile": {
@@ -24,6 +24,13 @@
             "publisher": "publisher field value",
             "sku": "sku field value",
             "version": "version field value"
+        },
+        "userProfile": {
+            "passwordProfile": {
+                "password": "abc$123",
+                "publicKey": "my-ssh-publick-key"
+            },
+            "username": "vmuser"
         },
         "v1Prop": 9,
         "v3Prop": 15,

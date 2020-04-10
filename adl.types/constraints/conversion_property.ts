@@ -5,5 +5,9 @@ import { ConversionConstraint } from './types'
 // versioned  => normalized
 // normalized => versioned
 
-// maps the property from one location to another
+// tells auto conversion logic that the property has a different name on target
 export interface RenameTo<sourceNameOrJPath extends string> extends ConversionConstraint{}
+
+// tells auto conversion logic that the property has moved to a different part of the output object graph
+export interface MoveTo<targetJsonPath extends string> extends ConversionConstraint{}
+

@@ -54,6 +54,10 @@ export interface VirtualMachineProps{
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
 
     specials: somethingSpecial[];
+
+ 	username: string & adltypes.MoveTo<'$.properties.userProfile.username'>;
+    password: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.password'>;
+    publicKey: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.publicKey'>;
 }
 
 export interface HWProfile {

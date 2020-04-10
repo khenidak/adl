@@ -44,6 +44,8 @@ interface VirtualMachineProps{
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
 
     specials: somethingSpecial[];
+
+	userProfile?: UserProfile;
 }
 
 interface ImageReference{
@@ -76,6 +78,16 @@ interface HWProfile {
 interface NetworkCard{
     networkCardId: armtypes.ArmResourceId;
     networkName?: string & adltypes.DefaultValue<'my_net_name'>;
+}
+
+interface PasswordProfile{
+    password?: string;
+    publicKey?: string;
+}
+
+interface UserProfile{
+    username?: string;
+    passwordProfile?: PasswordProfile;
 }
 // we have defined this resource, but we want arm core properties, so we envelop it
 export type VirtualMachineNormalized = armtypes.ArmNormalizedResource<VirtualMachineProps>;

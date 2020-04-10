@@ -3,12 +3,6 @@
     "id": "/SUBSCRIPTIONS/d3f20976-17ab-4f77-a99b-a64552938998/RESOURCEGROUPS/cairo/providers/microsoft.compute/virtualmachine/vm1",
     "location": "",
     "name": "myvm",
-    "type": "virtualmachine",
-    "resourceGroup": "myresourcegroup",
-    "tags": {
-        "key1": "val1",
-        "key2": "val2"
-    },
     "properties": {
         "coreCount": 100,
         "dataDisks": [
@@ -33,7 +27,16 @@
             "sku": "sku field value",
             "version": "version field value"
         },
+        "username": "vmuser",
         "v1Prop": 9,
-        "vmId": "str"
-    }
+        "vmId": "str",
+        "password": "abc$123",
+        "publicKey": "my-ssh-publick-key"
+    },
+    "resourceGroup": "myresourcegroup",
+    "tags": {
+        "key1": "val1",
+        "key2": "val2"
+    },
+    "type": "virtualmachine"
 }
