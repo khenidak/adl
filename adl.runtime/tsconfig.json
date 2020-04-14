@@ -10,11 +10,10 @@
     "types" : ["node"]
    },
   "include": [
-    "./index.ts",
-    "./model/**/*",
-    "./serialization/**/*"
+    "./index.ts"
   ],
   "exclude": [
+    "apis",
     "dist",
     "test/scenarios/**",
     "resources",

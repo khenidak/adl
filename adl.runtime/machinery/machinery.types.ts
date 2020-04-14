@@ -4,8 +4,14 @@ import * as modeltypes from '../model/module'
 export const ADL_RUNTIME_NAME = "adl-core-runtime";
 // default name for runtime creator name
 export const DEFAULT_RUNTIME_CREATOR_TYPE_NAME = "RuntimeCreator";
-// loadable runtime types
 
+// api name for adl apis
+export const ADL_APIS_NAME = "adl.apis"
+// default version for adl-apis
+export const DEFAULT_ADL_APIS_VERSION = "adl-v1";
+export const ADL_APIS_ERROR_TYPE_NAME = "error";
+export const ADL_APIS_ERRORLIST_TYPE_NAME = "errorlist";
+// loadable runtime types
 // represents a loadable runtime
 export class machineryLoadableRuntime{
     get Name(): string{return this._name;}
@@ -305,4 +311,7 @@ export interface ApiMachinery{
 
     // creates a runtime instance for store
     createRuntime(store: ApiManager): ApiRuntime;
+
+    convertToVersioendError(error: adltypes.error, versionName: string):any;
+    convertToVersioendErrorList(errors: adltypes.errorList, versionName: string): any;
 }

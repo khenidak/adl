@@ -373,6 +373,13 @@
       "projectFolder": "compute_rp",
       "reviewCategory": "production",
       "shouldPublish": true
+    },
+    {
+      "packageName": "adl.apis",
+      "projectFolder": "adl.runtime/apis/adl.apis",
+      "reviewCategory": "production",
+      "shouldPublish": false
     }
+
   ]
 }

@@ -3,8 +3,9 @@ import fs from 'fs';
 
 import { CommandLineAction, CommandLineStringParameter, CommandLineChoiceParameter } from '@microsoft/ts-command-line'
 import { appContext } from './appContext'
-import * as adltypes from '@azure-tools/adl.types'
+import * as cliutils from './utils'
 
+import * as adltypes from '@azure-tools/adl.types'
 /* shows what is in store
  * in a runtime env, this will connect to rpaas api server
  * and use it as a store, to red api definitions from
@@ -125,12 +126,12 @@ export class machineryAction extends CommandLineAction {
         const apiName = this._apiName.value as string;
         const normalizedApiTypeName = this._normalizedApiTypeName.value as string;
 
-            const normalized = runtime.create_normalized_instance(apiName, normalizedApiTypeName);
-            console.log(JSON.stringify(normalized));/*TODO printers*/
-
-            return;
+        const normalized = runtime.create_normalized_instance(apiName, normalizedApiTypeName);
+        console.log(JSON.stringify(normalized));/*TODO printers*/
     }
 
+    //  if s is path, it returns the file in path
+    // if not, s is returned
     private getFromSource(s:string): string {
         if(resolve(s)){
             return fs.readFileSync(s).toString();
@@ -152,13 +153,7 @@ export class machineryAction extends CommandLineAction {
             throw new Error(`failed to read data from ${source}`)
 
         const normalized = runtime.normalize(versionedTyped, apiName, versionName, versionedApiTypeName, errors);
-        if(errors.length > 0){
-            //TODO set process exist code
-            console.log(JSON.stringify(errors)); //TODO printers
-            return;
-        }
-
-            console.log(JSON.stringify(normalized));
+        cliutils.printResultOrError(this.ctx, normalized, errors, true /*exit*/);
     }
 
     private denormalize(){
@@ -175,13 +170,7 @@ export class machineryAction extends CommandLineAction {
             throw new Error(`failed to read data from ${source}`)
 
         const versioned = runtime.denormalize(normalizedTyped, apiName, tgtVersionName, tgtversionedApiTypeName, errors);
-        if(errors.length > 0){
-            //TODO set process exist code
-            console.log(JSON.stringify(errors)); //TODO printers
-            return;
-        }
-
-        console.log(JSON.stringify(versioned));
+        cliutils.printResultOrError(this.ctx, versioned, errors, true /*exit*/);
     }
 
     private convert(){
@@ -203,15 +192,9 @@ export class machineryAction extends CommandLineAction {
             throw new Error(`failed to read data from ${source}`);
 
         const tgtversioned = runtime.convert(srcVersionedTyped, apiName, versionName, versionedApiTypeName, tgtVersionName, tgtversionedApiTypeName ,errors);
-        if(errors.length > 0){
-            //TODO set process exist code
-            console.log(JSON.stringify(errors)); //TODO printers
-            return;
-        }
-
-        console.log(JSON.stringify(tgtversioned));
-
+        cliutils.printResultOrError(this.ctx, tgtversioned, errors, true /*exit*/);
     }
+
     protected onExecute(): Promise<void> { // abstract
         return new Promise<void>( () => {
             const runtime = this.ctx.machineryRuntime;

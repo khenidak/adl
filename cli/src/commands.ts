@@ -63,12 +63,13 @@ export class adlCliParser extends CommandLineParser {
         const ctx = this.ctx;
         // create opts
         ctx.opts = new adlruntime.apiProcessingOptions();
+        ctx.opts.loadAdlApis = true; //we will be converting errors, and we load adl apis spec
 
         // wire up log level
         ctx.opts.logger.logLevel = adlruntime.apiProcessingLogLevel[this._log_level.value as string];
 
         // create the machinery using our opts
-        const machinery = adlruntime.CreateMachinery(ctx.opts);
+        const machinery = await adlruntime.CreateMachinery(ctx.opts);
         // keep it in context
         ctx.machinery = machinery
         // use it to create an api manager (store)

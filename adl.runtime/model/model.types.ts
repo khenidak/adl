@@ -350,26 +350,31 @@ class apiProcessingConsoleLogger implements apiProcessingLogger{
 
 // ApiLoadOptions logger, log level and other
 // settings used in processing (validation, loading etc).
+// TODO: move to a location outside models
 export class apiProcessingOptions{
-        // default log level none
-        private _logLevel: apiProcessingLogLevel = apiProcessingLogLevel.err;
-        private _logger: apiProcessingLogger;
+    // default log level none
+    private _logLevel: apiProcessingLogLevel = apiProcessingLogLevel.err;
+    private _logger: apiProcessingLogger;
 
-        constructor()
-        constructor(logLevel?: apiProcessingLogLevel)
-        constructor(logLevel?: apiProcessingLogLevel, logger?:apiProcessingLogger){
-            if(logLevel)
-                this._logLevel = logLevel;
+    // if true, the machinery will load adl types
+    // should be used set if the application is expected to use the macnhinery
+    // to convert adl own types(error/errorList) to versioned types
+    loadAdlApis: boolean;
 
-            if(logger){
-                this._logger = logger
-                return;
-            }
+    constructor()
+    constructor(logLevel?: apiProcessingLogLevel)
+    constructor(logLevel?: apiProcessingLogLevel, logger?:apiProcessingLogger){
+        if(logLevel) this._logLevel = logLevel;
 
-            this._logger = new apiProcessingConsoleLogger(this._logLevel);
-        }
+        if(logger){
+            this._logger = logger
+            return;
+         }
 
-        get logger(): apiProcessingLogger{
-            return this._logger;
-        }
+        this._logger = new apiProcessingConsoleLogger(this._logLevel);
+    }
+
+    get logger(): apiProcessingLogger{
+        return this._logger;
+    }
 }

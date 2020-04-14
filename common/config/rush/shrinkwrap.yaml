@@ -3,12 +3,13 @@ dependencies:
   '@azure-tools/codegen': 2.1.230
   '@azure-tools/linq': 3.1.217
   '@microsoft/ts-command-line': 4.3.10
+  '@rush-temp/adl.apis': 'file:projects/adl.apis.tgz'
   '@rush-temp/adl.runtime': 'file:projects/adl.runtime.tgz'
   '@rush-temp/adl.types': 'file:projects/adl.types.tgz'
   '@rush-temp/arm.adl': 'file:projects/arm.adl.tgz'
   '@rush-temp/cli': 'file:projects/cli.tgz'
-  '@rush-temp/sample_rp': 'file:projects/sample_rp.tgz'
   '@rush-temp/compute_rp': 'file:projects/compute_rp.tgz'
+  '@rush-temp/sample_rp': 'file:projects/sample_rp.tgz'
   '@types/js-yaml': 3.12.1
   '@typescript-eslint/eslint-plugin': 2.16.0
   '@typescript-eslint/parser': 2.16.0
@@ -170,11 +171,15 @@ packages:
       eslint: ^5.0.0 || ^6.0.0
     resolution:
       integrity: sha512-TKWbeFAKRPrvKiR9GNxErQ8sELKqg1ZvXi6uho07mcKShBnCnqNpDQWP01FEvWKf0bxM2g7uQEI5MNjSNqvUpQ==
-  /@typescript-eslint/eslint-plugin/2.16.0/@typescript-eslint!parser@2.16.0:
+  /@typescript-eslint/eslint-plugin/2.16.0/894af94b56f455770564ef7826675546:
     dependencies:
-      '@typescript-eslint/experimental-utils': 2.16.0
-      '@typescript-eslint/parser': 2.16.0
-      tsutils: 3.17.1
+      '@typescript-eslint/experimental-utils': /@typescript-eslint/experimental-utils/2.16.0/eslint@6.8.0
+      '@typescript-eslint/parser': /@typescript-eslint/parser/2.16.0/eslint@6.8.0
+      eslint: 6.8.0
+      eslint-utils: 1.4.3
+      functional-red-black-tree: 1.0.1
+      regexpp: 3.0.0
+      tsutils: /tsutils/3.17.1/typescript@3.7.5
     dev: false
     engines:
       node: ^8.10.0 || ^10.13.0 || >=11.10.1
@@ -196,6 +201,20 @@ packages:
       eslint: '*'
     resolution:
       integrity: sha512-bXTmAztXpqxliDKZgvWkl+5dHeRN+jqXVZ16peKKFzSXVzT6mz8kgBpHiVzEKO2NZ8OCU7dG61K9sRS/SkUUFQ==
+  /@typescript-eslint/experimental-utils/2.16.0/eslint@6.8.0:
+    dependencies:
+      '@types/json-schema': 7.0.4
+      '@typescript-eslint/typescript-estree': 2.16.0
+      eslint: 6.8.0
+      eslint-scope: 5.0.0
+    dev: false
+    engines:
+      node: ^8.10.0 || ^10.13.0 || >=11.10.1
+    id: registry.npmjs.org/@typescript-eslint/experimental-utils/2.16.0
+    peerDependencies:
+      eslint: '*'
+    resolution:
+      integrity: sha512-bXTmAztXpqxliDKZgvWkl+5dHeRN+jqXVZ16peKKFzSXVzT6mz8kgBpHiVzEKO2NZ8OCU7dG61K9sRS/SkUUFQ==
   /@typescript-eslint/parser/2.16.0:
     dependencies:
       '@types/eslint-visitor-keys': 1.0.0
@@ -205,6 +224,21 @@ packages:
     dev: false
     engines:
       node: ^8.10.0 || ^10.13.0 || >=11.10.1
+    peerDependencies:
+      eslint: ^5.0.0 || ^6.0.0
+    resolution:
+      integrity: sha512-+w8dMaYETM9v6il1yYYkApMSiwgnqXWJbXrA94LAWN603vXHACsZTirJduyeBOJjA9wT6xuXe5zZ1iCUzoxCfw==
+  /@typescript-eslint/parser/2.16.0/eslint@6.8.0:
+    dependencies:
+      '@types/eslint-visitor-keys': 1.0.0
+      '@typescript-eslint/experimental-utils': /@typescript-eslint/experimental-utils/2.16.0/eslint@6.8.0
+      '@typescript-eslint/typescript-estree': 2.16.0
+      eslint: 6.8.0
+      eslint-visitor-keys: 1.1.0
+    dev: false
+    engines:
+      node: ^8.10.0 || ^10.13.0 || >=11.10.1
+    id: registry.npmjs.org/@typescript-eslint/parser/2.16.0
     peerDependencies:
       eslint: ^5.0.0 || ^6.0.0
     resolution:
@@ -1586,6 +1620,18 @@ packages:
       typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
     resolution:
       integrity: sha512-kzeQ5B8H3w60nFY2g8cJIuH7JDpsALXySGtwGJ0p2LSjLgay3NdIpqq5SoOBe46bKDW2iq25irHCr8wjomUS2g==
+  /tsutils/3.17.1/typescript@3.7.5:
+    dependencies:
+      tslib: 1.10.0
+      typescript: 3.7.5
+    dev: false
+    engines:
+      node: '>= 6'
+    id: registry.npmjs.org/tsutils/3.17.1
+    peerDependencies:
+      typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
+    resolution:
+      integrity: sha512-kzeQ5B8H3w60nFY2g8cJIuH7JDpsALXySGtwGJ0p2LSjLgay3NdIpqq5SoOBe46bKDW2iq25irHCr8wjomUS2g==
   /type-check/0.3.2:
     dependencies:
       prelude-ls: 1.1.2
@@ -1694,6 +1740,15 @@ packages:
     dev: false
     resolution:
       integrity: sha512-PRU7gJrJaXv3q3yQZ/+/X6KBswZiaQ+zOmdprZcouPYtQgvNU35i+68M4b1ZHLZtYFT5QObFLV+ZkmJYcwKdiw==
+  'file:projects/adl.apis.tgz':
+    dependencies:
+      '@microsoft/ts-command-line': 4.3.10
+    dev: false
+    name: '@rush-temp/adl.apis'
+    resolution:
+      integrity: sha512-8Y2Wjf763VRmXx08kl3RVNEwfYd9+KmNZa/sU5HeusA3fhDENgF9D/TbjFZ7s96RarSaeg6bdtw+htZ5wMdjUA==
+      tarball: 'file:projects/adl.apis.tgz'
+    version: 0.0.0
   'file:projects/adl.runtime.tgz':
     dependencies:
       '@azure-tools/async-io': 3.0.211
@@ -1703,8 +1758,8 @@ packages:
       '@types/js-yaml': 3.12.1
       '@types/mocha': 5.2.5
       '@types/node': 12.7.2
-      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/@typescript-eslint!parser@2.16.0
-      '@typescript-eslint/parser': 2.16.0
+      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/894af94b56f455770564ef7826675546
+      '@typescript-eslint/parser': /@typescript-eslint/parser/2.16.0/eslint@6.8.0
       eslint: 6.8.0
       js-yaml: 3.13.1
       mocha: 5.2.0
@@ -1721,8 +1776,8 @@ packages:
   'file:projects/adl.types.tgz':
     dependencies:
       '@types/node': 12.7.2
-      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/@typescript-eslint!parser@2.16.0
-      '@typescript-eslint/parser': 2.16.0
+      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/894af94b56f455770564ef7826675546
+      '@typescript-eslint/parser': /@typescript-eslint/parser/2.16.0/eslint@6.8.0
       eslint: 6.8.0
       typescript: 3.7.5
     dev: false
@@ -1734,14 +1789,14 @@ packages:
   'file:projects/arm.adl.tgz':
     dependencies:
       '@types/node': 12.7.2
-      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/@typescript-eslint!parser@2.16.0
-      '@typescript-eslint/parser': 2.16.0
+      '@typescript-eslint/eslint-plugin': /@typescript-eslint/eslint-plugin/2.16.0/894af94b56f455770564ef7826675546
+      '@typescript-eslint/parser': /@typescript-eslint/parser/2.16.0/eslint@6.8.0
       eslint: 6.8.0
       typescript: 3.7.5
     dev: false
     name: '@rush-temp/arm.adl'
     resolution:
-      integrity: sha512-5neZhdwMImA7kgRmD2EUmPtpHD0AvlcesNf6zzGkwKvdsUb+Y+MvrjFeZtNl8HtKVXWIg3s/MehSodZ5SJySbQ==
+      integrity: sha512-CGtGLC+61WmOC+sFDc0i5YENZ6f7VvxkcLYk77s50fkEVDRRX94GJ3PkIwDreT/jX5Qiu5k1iZhDmy7n3uT44g==
       tarball: 'file:projects/arm.adl.tgz'
     version: 0.0.0
   'file:projects/cli.tgz':
@@ -1754,6 +1809,15 @@ packages:
       integrity: sha512-6ZL6JUhdNH4TXdXNXyEmIx6b88uQIy4gz6nka4myevYQn+/5zPUvTu8sy6amm3CnDOUX8YczGRM9VKyetkXNZw==
       tarball: 'file:projects/cli.tgz'
     version: 0.0.0
+  'file:projects/compute_rp.tgz':
+    dependencies:
+      '@microsoft/ts-command-line': 4.3.10
+    dev: false
+    name: '@rush-temp/compute_rp'
+    resolution:
+      integrity: sha512-BVDQQBmBRvDcbnBrdO6TmqbHqXnOug7CQaPcAVQWMnooN4Fikf7mRCZpcsXr43pwjLpfCts0YTFXgx317YEQGw==
+      tarball: 'file:projects/compute_rp.tgz'
+    version: 0.0.0
   'file:projects/sample_rp.tgz':
     dependencies:
       '@microsoft/ts-command-line': 4.3.10
@@ -1763,14 +1827,6 @@ packages:
       integrity: sha512-/3A28/GrcHoobFTg7YCCjmN0bmeTkxZnu/JoilUgXBom6O1u9TA9HFUPcP6UgJ0f8uy2zcloSCFpDvolSZ8Z4w==
       tarball: 'file:projects/sample_rp.tgz'
     version: 0.0.0
-  'file:projects/compute_rp.tgz':
-    dependencies:
-      '@microsoft/ts-command-line': 4.3.10
-    dev: false
-    name: '@rush-temp/compute_rp'
-    resolution:
-      tarball: 'file:projects/compute_rp.tgz'
-    version: 0.0.0
 registry: 'https://registry.npmjs.org/'
 shrinkwrapMinorVersion: 9
 shrinkwrapVersion: 3
@@ -1779,12 +1835,13 @@ specifiers:
   '@azure-tools/codegen': ~2.1.0
   '@azure-tools/linq': ~3.1.0
   '@microsoft/ts-command-line': 4.3.10
+  '@rush-temp/adl.apis': 'file:./projects/adl.apis.tgz'
   '@rush-temp/adl.runtime': 'file:./projects/adl.runtime.tgz'
   '@rush-temp/adl.types': 'file:./projects/adl.types.tgz'
   '@rush-temp/arm.adl': 'file:./projects/arm.adl.tgz'
   '@rush-temp/cli': 'file:./projects/cli.tgz'
-  '@rush-temp/sample_rp': 'file:./projects/sample_rp.tgz'
   '@rush-temp/compute_rp': 'file:./projects/compute_rp.tgz'
+  '@rush-temp/sample_rp': 'file:./projects/sample_rp.tgz'
   '@types/js-yaml': 3.12.1
   '@typescript-eslint/eslint-plugin': ~2.16.0
   '@typescript-eslint/parser': ~2.16.0

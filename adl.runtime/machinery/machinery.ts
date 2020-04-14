@@ -1,3 +1,5 @@
+import { resolve } from 'path'
+
 import * as adltypes from '@azure-tools/adl.types'
 
 import * as machinerytypes from './machinery.types'
@@ -18,6 +20,10 @@ export class api_machinery implements machinerytypes.ApiMachinery{
 
     private _generators = new Map<string, machinerytypes.Generator>();
 
+    // sysApiManager is a specialized store that carries refs
+    // to models and adltypes described using adl specs
+    private sysApiManager: machinerytypes.ApiManager;
+    private sysApiRuntime: machinerytypes.ApiRuntime;
     private registerRuntime(r: machinerytypes.machineryLoadableRuntime) : void{
         if(this._runtimes.has(r.Name))
                 throw new Error(`runtime ${r.Name} has been already registered`);
@@ -100,10 +106,29 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         return adlcore;
     }
 
-    constructor(private opts: modeltypes.apiProcessingOptions){
-            // load core runtime
-            const coreRuntime = this.buildAdlRuntime();
-            this.registerRuntime(coreRuntime);
+    constructor(private opts: modeltypes.apiProcessingOptions){}
+
+    public async init(): Promise<void>{
+         // load core runtime
+        const coreRuntime = this.buildAdlRuntime();
+        this.registerRuntime(coreRuntime);
+
+        this.sysApiManager =  new api_manager(this);
+        this.sysApiRuntime = new runtime.apiRuntime(this.sysApiManager, this, this.opts);
+        // add system apis
+        // adl:
+        const rootRuntimePath = resolve(__dirname, "../..");
+        this.opts.logger.info(`identified runtime path as:${rootRuntimePath}`)
+        const rootapisPath = `${rootRuntimePath}/apis`
+        if(this.opts.loadAdlApis){
+            const adlapisPath = `${rootapisPath}/adl.apis/`
+
+            this.opts.logger.verbose(`adl machinery is loading adl.apis from ${adlapisPath}`);
+            const errs = await this.sysApiManager.addApi(this.opts, machinerytypes.ADL_APIS_NAME, adlapisPath);
+            // we really can not do anything if there are errors loading system apis
+            if(errs.length > 0 )
+                throw new Error(`catastrophic error loading system apis:${JSON.stringify(errs)}`);
+        }
     }
 
     // loads an external runtime
@@ -213,12 +238,35 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         generator.generate(apiManager, this.opts, config);
     }
 
-    // create runtime for an entire store
+    // create runtime for an api manager
     createRuntime(store: machinerytypes.ApiManager): machinerytypes.ApiRuntime{
         return new runtime.apiRuntime(store,this, this.opts);
     }
 
+    // creates an api manager
     createApiManager(): machinerytypes.ApiManager{
         return new api_manager(this);
     }
+
+    // converts a normalized error to versioned error
+    convertToVersioendError(error: adltypes.error, versionName: string = machinerytypes.DEFAULT_ADL_APIS_VERSION): any{
+        if(!this.opts.loadAdlApis) throw new Error("adl apis was not loaded, must set processingOptions.loadAdlApis to true");
+         return this.sysApiRuntime.denormalize(error,
+                                               machinerytypes.ADL_APIS_NAME,
+                                               versionName,
+                                               machinerytypes.ADL_APIS_ERROR_TYPE_NAME,
+                                               new adltypes.errorList() /* expect no errors */);
+    }
+
+    //!!! DON NOT USE UNTIL ADL SUPPORTS ROOT ARRAY TYPES !!!
+    // converts a normalized errorlist to versioned errorlist
+    convertToVersioendErrorList(errors: adltypes.errorList, versionName: string = machinerytypes.DEFAULT_ADL_APIS_VERSION): any{
+        if(!this.opts.loadAdlApis) throw new Error("adl apis was not loaded, must set processingOptions.loadAdlApis to true");
+        return this.sysApiRuntime.denormalize(errors,
+                                              machinerytypes.ADL_APIS_NAME,
+                                              versionName,
+                                              machinerytypes.ADL_APIS_ERRORLIST_TYPE_NAME,
+                                              new adltypes.errorList() /* expect no errors */);
+    }
+
 }

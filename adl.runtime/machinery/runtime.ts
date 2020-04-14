@@ -1072,7 +1072,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
         // api won't load if the reference by name does not exist.
         const normalizedTypeModel = apiModel.getNormalizedApiType(versionedTypeModel.NormalizedApiTypeName) as modeltypes.NormalizedApiTypeModel;
-        const versionedTyped =  adltypes.isComplex(payload) ? payload : JSON.parse(payload);
+        const versionedTyped =  ("string" !== typeof payload) ? payload : JSON.parse(payload);
         const rootField = adltypes.getRootFieldDesc();
 
         /* TODO: @khenidak optimize
@@ -1125,7 +1125,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
 
         // api won't load if the reference by name does not exist.
         const normalizedTypeModel = apiModel.getNormalizedApiType(versionedTypeModel.NormalizedApiTypeName) as modeltypes.NormalizedApiTypeModel;
-        const normalizedTyped = adltypes.isComplex(normalizedPayload) ? normalizedPayload : JSON.parse(normalizedPayload);
+        const normalizedTyped = ("string" !== typeof normalizedPayload) ? normalizedPayload : JSON.parse(normalizedPayload);
 
         const rootField = adltypes.getRootFieldDesc();
 

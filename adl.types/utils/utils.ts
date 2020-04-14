@@ -28,7 +28,7 @@ export function  getRootFieldDesc(): adltypes.fieldDesc{
 // KNOWN ERRORS
 export function createKnownError_MissingProperty(fieldDesc: adltypes.fieldDesc): adltypes.error{
     const e =  new adltypes.error();
-    e.errorMessage = `an non-optional ${fieldDesc.name} property is missing [${fieldDesc.path}]`;
+    e.errorMessage = `an non-optional ${fieldDesc.name} property is missing`;
     e.errorType = "validation";
     e.field = fieldDesc;
     return e;
@@ -36,7 +36,7 @@ export function createKnownError_MissingProperty(fieldDesc: adltypes.fieldDesc):
 
 export function createKnownError_ExtraProperty(fieldDesc: adltypes.fieldDesc): adltypes.error{
     const e =  new adltypes.error();
-    e.errorMessage = `unknown property ${fieldDesc.name} [${fieldDesc.path}]`;
+    e.errorMessage = `unknown property ${fieldDesc.name}`;
     e.errorType = "validation";
     e.field = fieldDesc;
     return e;
