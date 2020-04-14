@@ -80,6 +80,24 @@ export class api_type implements modeltypes.ApiTypeModel{
         return this._properties.get(name);
     }
 
+    // checks if the type is defined with a specific constraint
+    hasConstraintByName(name:string): boolean{
+        const constraints = this.Constraints;
+        for(const c of constraints)
+            if(c.Name == name) return true;
+
+        return false;
+    }
+    // gets a list of constraints that matches a name
+    getConstraintByName(name: string):Array<modeltypes.ConstraintModel>{
+        const constraints = this.Constraints;
+        const found = new Array<modeltypes.ConstraintModel>();
+        for(const c of constraints)
+            if(c.Name == name) found.push(c);
+
+        return found;
+    }
+
     constructor(private _t: Type | undefined){
 
     }

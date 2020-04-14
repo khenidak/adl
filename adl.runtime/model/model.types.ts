@@ -52,7 +52,8 @@ export interface ApiTypeModel extends loadableObject{
     readonly Constraints:Array<ConstraintModel>;
 
     getProperty(propertyName: string): ApiTypePropertyModel | undefined;
-
+    hasConstraintByName(name:string): boolean;
+    getConstraintByName(name: string):Array<ConstraintModel>;
 }
 
 
