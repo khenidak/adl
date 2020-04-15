@@ -1,7 +1,5 @@
-/* this is the module is the implementation of all constraints outlined
- * adl.types. it also provides the runtime needed to load more*/
+/* this is the module is the implementation of all constraints defined in adl.types */
 
-
-export * from './validation'
-export * from './defaulting'
+export * from './validation/module'
+export * from './defaulting/module'
 export * from './conversion/module'

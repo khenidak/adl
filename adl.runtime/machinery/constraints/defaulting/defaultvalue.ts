@@ -1,6 +1,6 @@
 import * as adltypes from '@azure-tools/adl.types'
-import * as machinerytypes from '../machinery.types'
-import * as modeltypes from '../../model/module'
+import * as machinerytypes from '../../machinery.types'
+import * as modeltypes from '../../../model/module'
 
 export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl{
     Run(
