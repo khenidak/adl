@@ -20,27 +20,27 @@ export class DefaultValueImpl implements machinerytypes.DefaultingConstraintImpl
         // set default value
         if(!leveledTyped.hasOwnProperty(context.propertyName) || leveledTyped[context.propertyName] == null){
             if(p.DataTypeName == "string") {
-                leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
+                leveledTyped[context.propertyName] = String(context.Constraint.Arguments[0]);
                 return;
             }
 
             if(p.DataTypeName == "number"){
-                leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0]);
+                leveledTyped[context.propertyName] = Number(context.Constraint.Arguments[0]);
                 return;
             }
             if(p.DataTypeName == "boolean"){
-                leveledTyped[context.propertyName] = JSON.parse(context.ConstraintArgs[0]); // *sigh*
+                leveledTyped[context.propertyName] = JSON.parse(context.Constraint.Arguments[0]); // *sigh*
                 return;
             }
         }
 
         if(p.DataTypeName == "string" && leveledTyped[context.propertyName] == ""){
-            leveledTyped[context.propertyName] = String(context.ConstraintArgs[0]);
+            leveledTyped[context.propertyName] = String(context.Constraint.Arguments[0]);
             return;
         }
 
         if(p.DataTypeName == "number" && leveledTyped[context.propertyName] == 0){
-            leveledTyped[context.propertyName] = Number(context.ConstraintArgs[0] as number);
+            leveledTyped[context.propertyName] = Number(context.Constraint.Arguments[0] as number);
             return;
         }
         // boolean can't be set if the property is not null or exist.

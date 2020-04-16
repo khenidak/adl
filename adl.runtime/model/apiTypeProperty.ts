@@ -289,11 +289,18 @@ class property_DataType implements modeltypes.PropertyDataType{
         for(let tt of constraintsTypes){
             const name = helpers.EscapedName(tt);
             const args = new Array<any>();
-            tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString(arg.getText())));
-        const c = new property_constraint(name, args);
+            const typeArgs = tt.getTypeArguments();
 
+            for(const arg of typeArgs){
+                if(arg.isTuple()) /*process as tuple*/{
+                   args.push(arg.getText());
+                }else{
+                    args.push(helpers.quotelessString(arg.getText()))
+                }
+            }
+            const c = new property_constraint(name, args);
             // add it
-        constraints.push(c);
+            constraints.push(c);
         }
         return constraints;
     }
@@ -333,8 +340,16 @@ class property_DataType implements modeltypes.PropertyDataType{
             const name = helpers.EscapedName(tt);
             const args = new Array<any>();
             // get args
-            tt.getTypeArguments().forEach(arg => args.push(helpers.quotelessString( arg.getText())));
+            const typeArgs = tt.getTypeArguments();
+            for(const arg of typeArgs){
+                if(arg.isTuple()) /*process as tuple*/{
+                   args.push(arg.getText());
+                }else{
+                    args.push(helpers.quotelessString( arg.getText()))
+                }
+            }
             const c = new property_constraint(name, args);
+
             // add it
             constraints.push(c);
         }

@@ -103,6 +103,9 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         const val9i = new constraints.MinItemsImpl();
         adlcore.validationImplementations.set("MinItems", val9i);
 
+        const val10i = new constraints.OneOfImpl();
+        adlcore.validationImplementations.set("OneOf", val10i);
+
         const conv1i = new constraints.RenameToImpl();
         adlcore.conversionImplementations.set("RenameTo", conv1i);
 

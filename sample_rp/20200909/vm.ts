@@ -58,10 +58,24 @@ export interface VirtualMachineProps{
     networkCards?: adltypes.AdlMap<string, NetworkCard>;
 
     specials: somethingSpecial[];
-
+    /**
+     * the following is a list of properties that has a major structure change. normalized define
+     * them in a complex nested type. using MoveTo constraint the spec author can remap these
+     * without having to write imperative conversion logic
+    */
  	username: string & adltypes.MoveTo<'$.properties.userProfile.username'>;
     password: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.password'>;
     publicKey: string & adltypes.MoveTo<'$.properties.userProfile.passwordProfile.publicKey'>;
+    /**
+     * this is an enum example. adl defines enum as base type (in this case string)
+     * and possible values. this allows spec author to add more possible values when
+     * needed without breaking existing versions. enums can be defined per version
+     * with the following rules in mind:
+     * -- normalized has to be the union of *all* possible values of all versions
+     * -- the base enum type is the same across all versions. otherwise it will require
+     * conversion
+    */
+    boxColor: string & adltypes.OneOf<['red', 'green', 'blue']>;
 }
 
 export interface HWProfile {

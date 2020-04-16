@@ -16,7 +16,7 @@ export class RenameToImpl implements machinerytypes.ConversionConstraintImpl{
         leveledNormalizedModel: modeltypes.ApiTypeModel,
         versionName: string):{targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel, target:any} | undefined {
 
-        const to = context.ConstraintArgs[0] as string;
+        const to = context.Constraint.Arguments[0] as string;
         // preflight
         if(!leveledVersioned.hasOwnProperty(context.propertyName)) return undefined; // no source
 
@@ -47,7 +47,7 @@ export class RenameToImpl implements machinerytypes.ConversionConstraintImpl{
         leveledNormalizedModel: modeltypes.ApiTypeModel,
         versionName: string) : {targetModel: modeltypes.ApiTypeModel,targetProperty:modeltypes.ApiTypePropertyModel,target:any} | undefined {
 
-        const fromProp = context.ConstraintArgs[0] as string;
+        const fromProp = context.Constraint.Arguments[0] as string;
         // preflight
         if(!leveledNormalized.hasOwnProperty(fromProp)) return undefined; // no source
 

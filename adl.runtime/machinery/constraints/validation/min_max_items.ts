@@ -14,7 +14,7 @@ export class MaxItemsImpl implements machinerytypes.ValidationConstraintImpl {
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean {
             const propVal = leveledTyped[context.propertyName];
-            const maximumItems = context.ConstraintArgs[0] as number;
+            const maximumItems = context.Constraint.Arguments[0] as number;
 
             if (!Array.isArray(propVal)) return true;
 
@@ -38,7 +38,7 @@ export class MinItemsImpl implements machinerytypes.ValidationConstraintImpl {
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean {
             const propVal = leveledTyped[context.propertyName];
-            const minimumItems = context.ConstraintArgs[0] as number;
+            const minimumItems = context.Constraint.Arguments[0] as number;
 
             if (!Array.isArray(propVal)) return true;
 

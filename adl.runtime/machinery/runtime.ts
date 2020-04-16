@@ -1,5 +1,6 @@
 import * as adltypes from '@azure-tools/adl.types'
 import * as machinerytypes from './machinery.types'
+import * as modeltypes from '../model/module'
 
 // TODO: !!!+++ NULL CHECKS IS MISSING +++ !!! //
 
@@ -19,7 +20,23 @@ import * as machinerytypes from './machinery.types'
     *   Walking means going from root object to every single property, including those
     *   which might be part of an complex object inside an array.
     */
-import * as modeltypes from '../model/module'
+function createConstraintExecCtx(
+        machinery: machinerytypes.ApiMachinery,
+        opts: modeltypes.apiProcessingOptions,
+        Constraint: modeltypes.ConstraintModel,
+        propertyName: string,
+        fieldPath: adltypes.fieldDesc,
+        errors: adltypes.errorList
+    ): machinerytypes.ConstraintExecContext {
+        return {
+            machinery: machinery,
+            opts: opts,
+            Constraint: Constraint,
+            propertyName: propertyName,
+            fieldPath: fieldPath,
+            errors: errors,
+        };
+}
 
 export class InvalidErrorApiModel extends Error {
     constructor(apiInfoName: string) {
@@ -179,7 +196,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             for(let c of defaultingConstraints){
                 const implementation = this.machinery.getDefaultingConstraintImplementation(c.Name);
                 // run it
-                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, versionedP.Name, currentFieldDesc,errors);
+                const ctx = createConstraintExecCtx(this.machinery, this.opts, c, propertyName, currentFieldDesc,errors);
                 implementation.Run(ctx, rootVersioned, leveledVersioned, rootVersionedModel, leveledVersionedModel)
             }
 
@@ -189,7 +206,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             let target_changed = undefined;
             if(c != undefined){
                 const impl = this.machinery.getConversionConstraintImplementation(c.Name);
-                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, propertyName, currentFieldDesc,errors);
+                const ctx = createConstraintExecCtx(this.machinery, this.opts, c, propertyName, currentFieldDesc,errors);
                 target_changed = impl.ConvertToNormalized(
                     ctx,
                     rootVersioned,
@@ -575,7 +592,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                 let target_changed = undefined;
                 if(c != undefined){
                     const impl = this.machinery.getConversionConstraintImplementation(c.Name);
-                    const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, versionedP.Name, currentFieldDesc,errors);
+                    const ctx = createConstraintExecCtx(this.machinery, this.opts, c, versionedP.Name, currentFieldDesc,errors);
                     target_changed = impl.ConvertToVersioned(
                         ctx,
                         rootVersioned,
@@ -622,7 +639,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                for(let c of defaultingConstraints){
                    const implementation = this.machinery.getDefaultingConstraintImplementation(c.Name);
                    // run it
-                   const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, versionedP.Name, currentFieldDesc, errors);
+                   const ctx = createConstraintExecCtx(this.machinery, this.opts, c, versionedP.Name, currentFieldDesc, errors);
                    implementation.Run(ctx, rootVersioned, leveledVersioned, rootVersionedModel, leveledVersionedModel)
                }
         }
@@ -689,7 +706,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             for(let c of defaultingConstraints){
                 const implementation = this.machinery.getDefaultingConstraintImplementation(c.Name);
                 // run it
-                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, p.Name, currentFieldDesc,errors);
+                const ctx = createConstraintExecCtx(this.machinery, this.opts, c, p.Name, currentFieldDesc,errors);
                 implementation.Run(
                     ctx,
                     root,
@@ -833,7 +850,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
             // run validation constraint
             for(let c of validationConstraints){
                 const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
-                const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, p.Name, currentFieldDesc,errors);
+                const ctx = createConstraintExecCtx(this.machinery, this.opts, c, p.Name, currentFieldDesc,errors);
                 implementation.Run(
                     ctx,
                     root,
@@ -896,7 +913,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     // run constraints for key
                     for(let c of keyConstranints){
                         const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
-                        const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, key, walkField, errors);
+                        const ctx = createConstraintExecCtx(this.machinery, this.opts, c, key, walkField, errors);
                         implementation.Run(
                             ctx,
                             root,
@@ -911,7 +928,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                     // run constaint for value
                      for(let c of valueConstraints){
                         const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
-                        const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, key, walkField, errors);
+                        const ctx = createConstraintExecCtx(this.machinery, this.opts, c, key, walkField, errors);
                         implementation.Run(
                             ctx,
                             root,
@@ -998,7 +1015,7 @@ export class apiRuntime implements machinerytypes.ApiRuntime{
                         const elementValidationConstraints =  elementModel.ElementValidationConstraints;
                         for(let c of elementValidationConstraints){
                             const implementation = this.machinery.getValidationConstraintImplementation(c.Name);
-                            const ctx = machinerytypes.createConstraintExecCtx(this.machinery, this.opts, c.Name, c.Arguments, p.Name, indexedFieldDesc,errors);
+                            const ctx = createConstraintExecCtx(this.machinery, this.opts, c, p.Name, indexedFieldDesc,errors);
                                 implementation.Run(
                                     ctx,
                                     root,

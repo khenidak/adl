@@ -36,6 +36,18 @@ interface VirtualMachineProps{
              adltypes.MaxItems<4> &
              adltypes.MinItems<2>;
 
+
+     /**
+      * this is an enum example. adl defines enum as base type (in this case string)
+      * and possible values. this allows spec author to add more possible values when
+      * needed without breaking existing versions. enums can be defined per version
+      * with the following rules in mind:
+      * -- normalized has to be the union of *all* possible values of all versions
+      * -- the base enum type is the same across all versions. otherwise it will require
+      * conversion
+     */
+    boxColor: string & adltypes.OneOf<['red', 'green', 'blue']>;
+
     /**
     *  this is another property documentation, i can here describe the property for user facing doc. I can also
     *  provide tags. the farmework can help in asserting that certain tags are exposed. make sure that docs

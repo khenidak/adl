@@ -32,7 +32,8 @@
         "v4Prop": [ 1, 2, 3 ],
         "vmId": "str",
         "password": "abc$123",
-        "publicKey": "my-ssh-publick-key"
+        "publicKey": "my-ssh-publick-key",
+	"boxColor": "red"
     },
     "resourceGroup": "myresourcegroup",
     "tags": {

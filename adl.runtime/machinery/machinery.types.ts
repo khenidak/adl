@@ -117,36 +117,14 @@ export interface ConstraintExecContext{
         machinery: ApiMachinery;
         // logging, log level etc
         opts: modeltypes.apiProcessingOptions;
-        // name of the constraint
-        ConstraintName:string;
-        // arguments of this constraint
-        ConstraintArgs: Array<any>;
+        // constraint to execute
+        Constraint: modeltypes.ConstraintModel;
         // property name where the constraint should run
         propertyName: string;
         // current field
         fieldPath: adltypes.fieldDesc;
         // error bag
         errors: adltypes.errorList;
-}
-
-export function createConstraintExecCtx(
-        machinery: ApiMachinery,
-        opts: modeltypes.apiProcessingOptions,
-        ConstraintName:string,
-        ConstraintArgs: Array<any>,
-        propertyName: string,
-        fieldPath: adltypes.fieldDesc,
-        errors: adltypes.errorList
-    ): ConstraintExecContext {
-        return {
-            machinery: machinery,
-            opts: opts,
-            ConstraintName:ConstraintName,
-            ConstraintArgs: ConstraintArgs,
-            propertyName: propertyName,
-            fieldPath: fieldPath,
-            errors: errors,
-        } as ConstraintExecContext;
 }
 
 // --- DEFAULTING CONSTRAINT  TYPES ---- //

@@ -14,7 +14,7 @@ export class MaximumImpl implements machinerytypes.ValidationConstraintImpl{
         isMapKey: boolean): boolean{
 
             const val = leveledTyped[context.propertyName] as number;
-            const max = context.ConstraintArgs[0] as number;
+            const max = context.Constraint.Arguments[0] as number;
             if(val > max){
                 context.errors.push(machinerytypes.createValidationError(`value ${val} is out of range expected max is ${max}`, context.fieldPath));
                 return false;
@@ -36,7 +36,7 @@ export class MinimumImpl implements machinerytypes.ValidationConstraintImpl{
         isMapKey: boolean): boolean{
 
             const val = leveledTyped[context.propertyName] as number;
-            const min = context.ConstraintArgs[0] as number;
+            const min = context.Constraint.Arguments[0] as number;
             if(val < min){
                 context.errors.push(machinerytypes.createValidationError(`value ${val} is out of range expected min is ${min}`, context.fieldPath));
                 return false;
@@ -62,13 +62,11 @@ export class RangeImpl implements machinerytypes.ValidationConstraintImpl{
             const minImpl = context.machinery.getValidationConstraintImplementation(minName);
 
             const clonedMax = Object.assign({}, context) as machinerytypes.ConstraintExecContext;
-            clonedMax.ConstraintName = maxName;
-            clonedMax.ConstraintArgs = [context.ConstraintArgs[1]];
+            clonedMax.Constraint = { Name: maxName, Arguments: [context.Constraint.Arguments[1]]};
             clonedMax.errors = new adltypes.errorList(); // we do our own errors
 
             const clonedMin = Object.assign({}, context) as machinerytypes.ConstraintExecContext;
-            clonedMin.ConstraintName = maxName;
-            clonedMin.ConstraintArgs = [context.ConstraintArgs[0]];
+            clonedMin.Constraint = { Name: maxName, Arguments: [context.Constraint.Arguments[0]]};
             clonedMin.errors = new adltypes.errorList(); // we do our own errors
 
 
@@ -76,7 +74,7 @@ export class RangeImpl implements machinerytypes.ValidationConstraintImpl{
             const minValidationFailed = maxValidationFailed && minImpl.Run(clonedMin, rootTyped, leveledTyped, existingRootTyped, existingLeveledTyped, rootApiTypeModel, leveledApiTypeModel, isMapKey);
 
             if(!maxValidationFailed || !minValidationFailed){
-                context.errors.push(machinerytypes.createValidationError(`value ${leveledTyped[context.propertyName]} is out of range expected value between ${context.ConstraintArgs[0]} - ${context.ConstraintArgs[1]}`, context.fieldPath));
+                context.errors.push(machinerytypes.createValidationError(`value ${leveledTyped[context.propertyName]} is out of range expected value between ${context.Constraint.Arguments[0]} - ${context.Constraint.Arguments[1]}`, context.fieldPath));
                 return false;
             }
 

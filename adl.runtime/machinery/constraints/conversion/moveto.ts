@@ -63,7 +63,7 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
 
      	// for now we assume the path is valid, because once conformance framework is complete
         // each constraint will be validated
-        const toPath = context.ConstraintArgs[0] as string;
+        const toPath = context.Constraint.Arguments[0] as string;
         const toProp = this.getPropertyNameFromPath(toPath);
         const fromProp = context.propertyName;
 
@@ -96,7 +96,7 @@ export class MoveToImpl implements machinerytypes.ConversionConstraintImpl{
 
 		// for now we assume the path is valid, because once conformance framework is complete
         // each constraint will be validated
-        const toPath = context.ConstraintArgs[0] as string;
+        const toPath = context.Constraint.Arguments[0] as string;
         const toProp = this.getPropertyNameFromPath(toPath);
         const fromProp = context.propertyName;
 

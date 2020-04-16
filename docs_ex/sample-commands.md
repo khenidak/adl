@@ -3,7 +3,7 @@
 API need to be preloaded. Add the following cmdline options with directory updated
 ```
 --pre-load-apis="name=sample_rp+path=/home/khenidak/go/src/github.com/khenidak/adl/sample_rp"
---pre-load-runtimes="path=/home/khenidak/go/src/github.com/khenidak/adl/arm.adl" 
+--pre-load-runtimes="path=/home/khenidak/go/src/github.com/khenidak/adl/arm.adl"
 ```
 
 # create an instance of a normalized type

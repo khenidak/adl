@@ -13,7 +13,7 @@ export class MultipleOfImpl implements machinerytypes.ValidationConstraintImpl{
         leveledApiTypeModel: modeltypes.ApiTypeModel,
         isMapKey: boolean): boolean{
             const propVal = leveledTyped[context.propertyName];
-            const factor = context.ConstraintArgs[0] as number;
+            const factor = context.Constraint.Arguments[0] as number;
 
             if (propVal == undefined) return true;
 
