@@ -416,14 +416,16 @@ class property_DataType implements modeltypes.PropertyDataType{
          if(this._cache.has("EnumValues"))
             return this._cache.get("EnumValues") as any[];
 
-        const vals: any[] = [];
+        let vals: any[] = [];
         if(!this.hasEnumConstraint()){
             this._cache.set("EnumValues", vals);
             return this._cache.get("EnumValues") as any[];
         }
 
         const enumConstraints = this.getConstraintsByType(adltypes.INTERFACE_NAME_ONEOF);
-        this._cache.set("EnumValues", enumConstraints[0].Arguments[0]); // also pre validated
+        vals = JSON.parse(enumConstraints[0].Arguments[0]);
+
+        this._cache.set("EnumValues", vals); // also pre validated
         return this._cache.get("EnumValues") as any[];
     }
 

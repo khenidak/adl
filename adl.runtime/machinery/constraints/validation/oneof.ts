@@ -19,7 +19,7 @@ export class OneOfImpl implements machinerytypes.ValidationConstraintImpl{
             const propVal = leveledTyped[propertyName];
             const property = leveledApiTypeModel.getProperty(propertyName) as modeltypes.ApiTypePropertyModel;
 
-            const possible_values = JSON.parse(context.Constraint.Arguments[0])
+            const possible_values = property.EnumValues;
 
             for(const possible_val of possible_values){
                 if(propVal == possible_val) return true;
