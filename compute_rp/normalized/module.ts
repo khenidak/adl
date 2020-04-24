@@ -5,7 +5,7 @@ import * as adltypes from "@azure-tools/adl.types";
 import { VirtualMachineScaleSetNormalized } from "./vmscalesets";
 
 // normalized resources
-export type VMSSNormalized = adltypes.NormalizedApiType<"vmscaleset", VirtualMachineScaleSetNormalized>;
+export type VMSSNormalized = adltypes.NormalizedApiType<"vmscalesets", VirtualMachineScaleSetNormalized>;
 
 // export properties so versioned decleration can see it
 export * from "./vmscalesets";

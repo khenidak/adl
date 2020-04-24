@@ -20,4 +20,4 @@ import * as core from "../normalized/module";
 // vm scale set is a top level resource
 // note: It does not require any special conversion logic so wre are composing it with  AutoVersioned<T>
 // Auto converter can convert between versions based on field names.
-export type vmscaleset_resource_20180601 = adltypes.ApiType<"vmscaleset", "virtualmachinescaleset", core.VirtualMachineScaleSetNormalized, VirtualMachineScaleSet20180601>;
+export type vmscaleset_resource_20180601 = adltypes.ApiType<"vmscalesets", "virtualmachinescalesets", core.VirtualMachineScaleSetNormalized, VirtualMachineScaleSet20180601>;

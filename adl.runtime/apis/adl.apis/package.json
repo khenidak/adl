@@ -12,15 +12,11 @@
   "license": "ISC",
   "devDependencies": {
     "@azure-tools/adl.types": "~1.0.0",
-    "@azure-tools/adl.runtime": "~1.0.0",
-    "@azure-tools/arm.adl": "~1.0.0",
-    "@microsoft/ts-command-line": "4.3.10"
+    "@azure-tools/adl.runtime": "~1.0.0"
   },
   "dependencies": {
     "@azure-tools/adl.types": "~1.0.0",
-    "@azure-tools/adl.runtime": "~1.0.0",
-    "@azure-tools/arm.adl": "~1.0.0",
-    "@microsoft/ts-command-line": "4.3.10"
+    "@azure-tools/adl.runtime": "~1.0.0"
   }
 
 }

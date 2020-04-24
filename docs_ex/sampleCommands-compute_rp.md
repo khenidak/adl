@@ -12,7 +12,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 ./cairo -a=info generators \
 --action=run \
 --generator-name=arm.openapi \
---config="apimodel=Microsoft.Compute,version=2018-06-01,format=yaml"
+--config="apimodel=microsoft.compute,version=2018-06-01,format=yaml"
 ```
 
 # create an instance of a normalized type
@@ -21,7 +21,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 ./cairo machinery \
 --api-name=microsoft.compute \
 --action=create-normalized-instance \
---normalized-api-type-name=vmscaleset
+--normalized-api-type-name=vmscalesets
 ```
 
 # create an instance of a versioned type (2018-06-01)
@@ -31,7 +31,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name=microsoft.compute \
 --action=create-versioned-instance \
 --api-version="2018-06-01" \
---versioned-api-type-name="virtualmachinescaleset"
+--versioned-api-type-name="virtualmachinescalesets"
 ```
 
 # create an instance of a versioned type (2018-10-01)
@@ -41,7 +41,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name=microsoft.compute \
 --action=create-versioned-instance \
 --api-version="2018-10-01" \
---versioned-api-type-name="virtualmachinescaleset"
+--versioned-api-type-name="virtualmachinescalesets"
 ```
 
 # normalize 2018-06-01
@@ -51,7 +51,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name="microsoft.compute" \
 --action=normalize \
 --api-version="2018-06-01" \
---versioned-api-type-name="virtualmachinescaleset" \
+--versioned-api-type-name="virtualmachinescalesets" \
 --source=./docs_ex/compute-rp-sample-data/vmscaleset_2018-06-01.json
 ```
 
@@ -61,7 +61,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name="microsoft.compute" \
 --action=normalize \
 --api-version="2018-10-01" \
---versioned-api-type-name="virtualmachinescaleset" \
+--versioned-api-type-name="virtualmachinescalesets" \
 --source=./docs_ex/compute-rp-sample-data/vmscaleset_2018-10-01.json
 ```
 
@@ -72,7 +72,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name=microsoft.compute \
 --action=denormalize \
 --target-api-version=2018-06-01 \
---target-versioned-api-type-name=virtualmachinescaleset \
+--target-versioned-api-type-name=virtualmachinescalesets \
 --source=./docs_ex/compute-rp-sample-data/vmscaleset-normalized.json
 ```
 
@@ -83,7 +83,7 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name=microsoft.compute \
 --action=denormalize \
 --target-api-version=2018-10-01 \
---target-versioned-api-type-name=virtualmachinescaleset \
+--target-versioned-api-type-name=virtualmachinescalesets \
 --source=./docs_ex/compute-rp-sample-data/vmscaleset-normalized.json
 ```
 
@@ -94,8 +94,8 @@ NOTE: 'format' in --config is optional. Defaults to json if not specified. For y
 --api-name=microsoft.compute \
 --action=convert \
 --api-version=2018-06-01 \
---versioned-api-type-name=virtualmachinescaleset \
+--versioned-api-type-name=virtualmachinescalesets \
 --target-api-version=2018-10-01 \
---target-versioned-api-type-name=virtualmachinescaleset \
+--target-versioned-api-type-name=virtualmachinescalesets \
 --source=./docs_ex/compute-rp-sample-data/vmscaleset_2018-06-01.json
 ```

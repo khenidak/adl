@@ -184,12 +184,12 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         if(e.NormalizedTypeName){
             name = `/normalizedtypes/${e.NormalizedTypeName}${name}`;
         }else{
-            name = `/versionedtypes/${e.VersionedTypeName}{$name}`;
+            name = `/versionedtypes/${e.VersionedTypeName}${name}`;
         }
         if(e.VersionName){
             name = `/versions/${e.VersionName}${name}`;
         }else{
-            name = `/versions/*${name}`;
+            name = `/versions/*/${name}`;
         }
         /*TODO LINK ERROR WARN/ERROR ONCE ADL HAS ERROR LEVEL*/
         err.field = {
@@ -201,13 +201,16 @@ export class api_machinery implements machinerytypes.ApiMachinery{
         return err;
     }
 
-    runConformance(model: modeltypes.AnyAdlModel, scope: machinerytypes.ConformanceRuleScope /* todo other filering args*/): adltypes.errorList{
+    runConformance(model: modeltypes.AnyAdlModel, scope: machinerytypes.ConformanceRuleScope /* todo other filering args*/, ruleGroupName:string): adltypes.errorList{
         const errs = new adltypes.errorList();
-        for(let [runtimeName, runtime] of this._runtimes){
-            for( let [ruleName, rule] of runtime.conformanceRules){
-                if(rule.Scope !== (scope & rule.Scope)) continue;
+        for(const [runtimeName, runtime] of this._runtimes){
+            for(const [ruleName, rule] of runtime.conformanceRules){
+                if(scope !== (scope & rule.Scope)) continue;
+                if(ruleGroupName.length > 0 && rule.Group != ruleGroupName) continue;
                     const conformanceErrors = rule.RunRule(model);
-                    for(let err  of conformanceErrors){
+
+
+                    for(const err of conformanceErrors){
                         err.RuleName = rule.Name;
                         err.Group = rule.Group;
                         err.OwnerRuntime = runtime.Name;
@@ -226,7 +229,6 @@ export class api_machinery implements machinerytypes.ApiMachinery{
                 }
             }
 
-        // convert errors;
         return errs;
     }
 

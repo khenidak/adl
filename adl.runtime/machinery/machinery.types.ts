@@ -282,7 +282,7 @@ export interface ApiMachinery{
     runGeneratorFor(apiManager: ApiManager, name:string, config: any | undefined):void;
 
     // runs conformance rules
-    runConformance(model: modeltypes.AnyAdlModel, scope: ConformanceRuleScope /* todo other filering args*/): adltypes.errorList;
+    runConformance(model: modeltypes.AnyAdlModel, scope: ConformanceRuleScope /* todo other filering args*/, ruleGroupName:string): adltypes.errorList;
 
     // loads a runtime
     loadRuntime(runtimePath: string, config:any | undefined, runtimeCreatorTypeName:string):Promise<void>;

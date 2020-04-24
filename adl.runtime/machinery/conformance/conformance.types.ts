@@ -5,11 +5,11 @@ import * as modeltypes from '../../model/module'
 // base narrow scope conformance rules
 export abstract class ConformanceRuleBase<T extends modeltypes.AnyAdlModel> implements machinerytypes.ConformanceRule<T>{
     _group: string = machinerytypes.DEFAULT_CONFORMANCE_GROUP;
- _kind: machinerytypes.ConformanceKind = machinerytypes.ConformanceKind.Semantic;
+    _kind: machinerytypes.ConformanceKind = machinerytypes.ConformanceKind.Semantic;
     _name: string = "";
+    _scope: machinerytypes.ConformanceRuleScope;
 
-    readonly Scope: machinerytypes.ConformanceRuleScope = machinerytypes.ConformanceRuleScope.Api;
-
+    get Scope(): machinerytypes.ConformanceRuleScope {return this._scope;};
     get Group(): string{ return this._group};
     get Name(): string{return this._name};
 
@@ -22,22 +22,45 @@ export abstract class ConformanceRuleBase<T extends modeltypes.AnyAdlModel> impl
 // narrow rules
 
 export abstract class ApiModelConformanceRule extends ConformanceRuleBase<modeltypes.ApiModel>{
+    constructor(){
+        super();
+        super._scope = machinerytypes.ConformanceRuleScope.Api;
+    }
     abstract RunRule(instance: modeltypes.ApiModel): Array<machinerytypes.ConformanceError>;
 }
 
 export abstract class NormalizedApiTypeConformanceRule extends ConformanceRuleBase<modeltypes.NormalizedApiTypeModel>{
-        abstract RunRule(instance: modeltypes.NormalizedApiTypeModel): Array<machinerytypes.ConformanceError>;
+    constructor(){
+        super();
+        super._scope = machinerytypes.ConformanceRuleScope.NormalizedApiType;
+    }
+
+    abstract RunRule(instance: modeltypes.NormalizedApiTypeModel): Array<machinerytypes.ConformanceError>;
 }
 
 export abstract class ApiVersionConformanceRule extends ConformanceRuleBase<modeltypes.ApiVersionModel>{
+    constructor(){
+        super();
+        super._scope = machinerytypes.ConformanceRuleScope.ApiVersion;
+    }
+
     abstract RunRule(instance: modeltypes.ApiVersionModel): Array<machinerytypes.ConformanceError>;
 }
 
-//TODO: narrow for all types versioned and non versioned
 export abstract class VersionedApiTypeConformanceRule extends ConformanceRuleBase<modeltypes.VersionedApiTypeModel>{
+    constructor(){
+        super();
+        super._scope = machinerytypes.ConformanceRuleScope.VersionedApiType;
+    }
+
     abstract RunRule(instance: modeltypes.VersionedApiTypeModel): Array<machinerytypes.ConformanceError>;
 }
 
 export abstract class ApiTypePropertyConformanceRule extends ConformanceRuleBase<modeltypes.ApiTypePropertyModel>{
+    constructor(){
+        super();
+        super._scope = machinerytypes.ConformanceRuleScope.ApiTypeProperty;
+    }
+
     abstract RunRule(instance: modeltypes.ApiTypePropertyModel): Array<machinerytypes.ConformanceError>;
 }
